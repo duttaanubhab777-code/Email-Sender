@@ -18,6 +18,12 @@ const submissionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    subject: {
+        type: string,
+        
+  
+    },
+    
     ipAddress: {
         type: String,
         default: null

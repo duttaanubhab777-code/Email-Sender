@@ -13,13 +13,10 @@ const userSchema = new mongoose.Schema({
         lowercase : true,
         trim: true
     },
-    password: {
-        type: String,
-        required: true
-    },
+    
+    
     ipAddress: {
-        type: mongoose.Schema.Types.ObjectId,
-          ref : "Submission",
+        type: string,
         default: null},
     apiKey: {
         type: String,
