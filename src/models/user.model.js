@@ -1,28 +1,97 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase : true,
-        trim: true
-    },
-    
-    
-    ipAddress: {
-        type: string,
-        default: null},
-    apiKey: {
-        type: String,
-        required: true,
-        unique: true
-    }
-}, { timestamps: true });
+const userSchema = new mongoose.Schema(
+    {
+        fullName: {
+            type: String,
+            required: true,
+            trim: true,
+            index: true
+        },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true
+        },
+        password: {
+            type: String,
+            required: true
+        },
 
-export const User = mongoose.model('User', userSchema);
+        avatar: {
+            type: String //cloudnary URL
+        },
+
+        ipAddress: {
+            type: String,
+            default: null
+        },
+        loginHistory: [
+            {
+                ipAddress: {
+                    type: String
+                },
+                loginTime: {
+                    type: Date,
+                    default: Date.now
+                }
+            }
+        ],
+
+        apiKey: {
+            type: String,
+            required: true,
+            unique: true
+        },
+        refreshToken: {
+            type: String
+        }
+    },
+    { timestamps: true }
+);
+
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+});
+
+userSchema.methods.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password);
+};
+
+userSchema.methods.genarateAccessToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            fullName: this.fullName
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    );
+};
+
+userSchema.methods.genarateRefreshToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
+    );
+};
+
+userSchema.plugin(mongooseAggregatePaginate);
+
+export const User = mongoose.model("User", userSchema);
