@@ -5,6 +5,14 @@ import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
     {
+        username: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
+            index: true
+        },
         fullName: {
             type: String,
             required: true,
@@ -45,8 +53,9 @@ const userSchema = new mongoose.Schema(
 
         apiKey: {
             type: String,
-            required: true,
-            unique: true
+
+            unique: true,
+            sparse: true // if apikey then not check the unique
         },
         refreshToken: {
             type: String
