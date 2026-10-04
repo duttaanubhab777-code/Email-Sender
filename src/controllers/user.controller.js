@@ -17,6 +17,8 @@ const genarateAccessAndRefreshTokens = async userId => {
 
         return { accessToken, refreshToken };
     } catch (error) {
+
+      console.log("ACTUAL TOKEN ERROR: ", error);
         throw new ApiError(
             500,
             "Something went wrong while genarating refrsh and access token"
@@ -90,7 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
 
-    if (!email || !username) {
+    if (!(email || username)) {
         throw new ApiError(400, "Email or Username required for login");
     }
 
@@ -122,8 +124,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .cookie("accessToken", accessToken)
-        .cookie("refreshToken", refreshToken)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
         .json(
             new ApiResponse(
                 200,
@@ -158,7 +160,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new ApiError(200, {}, "User logget Out Successfully"));
+        .json(new ApiResponse(200, {}, "User logged Out Successfully"));
 });
 
 export { registerUser, loginUser, logoutUser };
