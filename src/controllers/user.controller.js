@@ -22,11 +22,21 @@ const registerUser = asyncHandler(async (req, res) => {
     if (existedUser) {
         throw new ApiError(409, "User with email or username already exists");
     }
+    // if avatar required : true then the comment out code is safe
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    // const avatarLocalPath = req.files?.avatar[0]?.path;
 
-    if (!avatarLocalPath) {
+    /* if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required");
+    } */
+
+    let avatarLocalPath;
+    if (
+        req.files &&
+        Array.isArray(req.files.avatar) &&
+        req.files.avatar.length > 0
+    ) {
+        avatarLocalPath = req.files.avatar[0].path;
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
