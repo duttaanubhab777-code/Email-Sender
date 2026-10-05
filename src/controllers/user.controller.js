@@ -17,8 +17,7 @@ const genarateAccessAndRefreshTokens = async userId => {
 
         return { accessToken, refreshToken };
     } catch (error) {
-
-      console.log("ACTUAL TOKEN ERROR: ", error);
+        console.log("ACTUAL TOKEN ERROR: ", error);
         throw new ApiError(
             500,
             "Something went wrong while genarating refrsh and access token"
@@ -112,6 +111,12 @@ const loginUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await genarateAccessAndRefreshTokens(
         user._id
     );
+
+    await User.findByIdAndUpdate(user._id, {
+        $push: {
+            loginHistory: `Login at ${new Date().toLocaleString()} | IP: ${req.ip}`
+        }
+    });
 
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
