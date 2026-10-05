@@ -113,10 +113,13 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 
     await User.findByIdAndUpdate(user._id, {
-        $push: {
-            loginHistory: `Login at ${new Date().toLocaleString()} | IP: ${req.ip}`
+    $push: {
+        loginHistory: {
+            $each: [{ ipAddress: req.ip, loginTime: new Date() }],
+            $slice: -20
         }
-    });
+    }
+});
 
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
