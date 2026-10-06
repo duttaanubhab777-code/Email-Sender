@@ -201,17 +201,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true
         };
 
-        const { accessToken, newRefreshToken } =
+        const { accessToken, refreshToken } =
             await genarateAccessAndRefreshTokens(user._id);
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
+            .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(
                     200,
-                    { accessToken, refreshToken: newRefreshToken },
+                    { accessToken, refreshToken: refreshToken },
                     "Access Token Refreshed Successfully"
                 )
             );
@@ -224,9 +224,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     const user = await User.findById(req.user?._id);
 
-    const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
-    if (!oldPassword) {
+    if (!isPasswordCorrect) {
         throw new ApiError(400, "Invalid old password");
     }
 
@@ -241,7 +241,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user, "current user fetched Successfully");
+        .json(
+            new ApiResponse(200, req.user, "current user fetched Successfully")
+        );
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -251,7 +253,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         throw new ApiError(400, "This field is required ");
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -282,7 +284,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findByIdAndUpdate(
-        req.body?._id,
+        req.user?._id,
         {
             $set: {
                 avatar: avatar.url
@@ -292,12 +294,86 @@ const updateAvatar = asyncHandler(async (req, res) => {
         { new: true }
     ).select("-password");
 
-  return res
-  .status(200)
-  .json(
-    new ApiResponse(200, user, "avatar uploaded successfully")
-  )
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "avatar uploaded successfully"));
 });
+
+import mongoose from "mongoose";
+// (বাকি import গুলো তোমার ফাইলে আগে থেকেই আছে)
+
+const getUserDashboardStats = asyncHandler(async (req, res) => {
+    // req.user._id আমরা verifyJWT মিডলওয়্যার থেকে পাব
+    const userId = req.user._id;
+
+    const dashboardData = await User.aggregate([
+        {
+            // ১. $match: লগ-ইন করা ইউজারের ডেটা ফিল্টার করা
+            $match: {
+                _id: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            // ২. $lookup: ইউজারের সমস্ত API Key খুঁজে আনা
+            $lookup: {
+                from: "apikeys",
+                localField: "_id",
+                foreignField: "user",
+                as: "apiKeysList"
+            }
+        },
+        {
+            // ৩. $lookup: ইউজারের পাঠানো সমস্ত ইমেইলের হিস্ট্রি (Submissions) আনা
+            $lookup: {
+                from: "submissions",
+                localField: "_id",
+                foreignField: "user",
+                as: "allSubmissions"
+            }
+        },
+        {
+            // ৪. $addFields: অ্যারের সাইজ মেপে মোট সংখ্যা (Count) বের করা
+            $addFields: {
+                totalApiKeys: {
+                    $size: "$apiKeysList"
+                },
+                totalEmailsSent: {
+                    $size: "$allSubmissions"
+                }
+            }
+        },
+        {
+            // ৫. $project: ফ্রন্টএন্ডে শুধু দরকারি ডেটা পাঠানো
+            $project: {
+                fullName: 1,
+                email: 1,
+                avatar: 1,
+                totalApiKeys: 1,
+                totalEmailsSent: 1,
+                apiKeysList: 1 // API Key এর লিস্ট ড্যাশবোর্ডে দেখানোর জন্য পাঠানো হলো
+                // খেয়াল করো: allSubmissions এখানে দিইনি, তাই বিশাল ডেটা ফ্রন্টএন্ডে গিয়ে সার্ভার স্লো করবে না!
+            }
+        }
+    ]);
+
+    // যদি কোনো কারণে ইউজারের ডেটা না পাওয়া যায়
+    if (!dashboardData?.length) {
+        throw new ApiError(404, "User dashboard data not found");
+    }
+
+    // aggregate সব সময় একটি অ্যারে রিটার্ন করে, তাই dashboardData[0] পাঠানো হলো
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                dashboardData[0],
+                "User dashboard stats fetched successfully"
+            )
+        );
+});
+
+
 
 export {
     registerUser,
@@ -307,5 +383,6 @@ export {
     changeCurrentPassword,
     getCurrentUser,
     updateAccountDetails,
-    updateAvatar
+    updateAvatar,
+  getUserDashboardStats
 };
