@@ -3,41 +3,51 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Submission } from "../models/submission.model.js";
 import { ApiKey } from "../models/ApiKey.model.js";
+import { User } from "../models/user.model.js"; 
 import { sendEmailService } from "../services/email.service.js";
 
 const sendEmail = asyncHandler(async (req, res) => {
-    // ১. অন্য ডেভেলপারের ফ্রন্টএন্ড থেকে ইমেইলের ডেটাগুলো নেওয়া
-    const { toEmail, subject, message } = req.body;
+    // ১. ফর্ম থেকে ভিজিটরের ডেটা রিসিভ করা (এখানে আর toEmail লাগবে না)
+    const { senderName, senderEmail, subject, message } = req.body;
 
-    if (!toEmail || !subject || !message) {
-        throw new ApiError(400, "toEmail, subject, and message are required fields");
+    if (!senderName || !senderEmail || !subject || !message) {
+        throw new ApiError(400, "senderName, senderEmail, subject, and message are required fields");
     }
 
-    // আমাদের verifyApiKey পাহারাদার আগেই এই ডেটাগুলো req-এর মধ্যে রেখে দিয়েছে!
+    // ২. মিডলওয়্যার থেকে পাওয়া API Key-এর তথ্য
     const apiKeyDoc = req.apiKey; 
-    const user = req.user;
 
-    // ২. আসল ইমেইল পাঠানোর সার্ভিস কল করা
+    // ৩. API Key-এর মালিকের (Owner) ইমেইল বের করা
+    const ownerUser = await User.findById(apiKeyDoc.user);
+    if (!ownerUser) {
+        throw new ApiError(404, "API Key owner not found");
+    }
+
+    // ৪. ভিজিটরের IP Address বের করা
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'N/A';
+
+    // ৫. সার্ভিস লেয়ারে ডেটা পাঠানো
     await sendEmailService({
-        senderName: user.fullName,
-        toEmail: toEmail,
-        subject: subject,
-        message: message
-    });
-    // আপাতত আমরা ধরে নিচ্ছি ইমেইল সফলভাবে পাঠানো হয়েছে। 
-    // (Nodemailer-এর কনফিগারেশন আমরা এর পরের ধাপে অ্যাড করব)
-    let emailStatus = "sent"; 
-
-    // ৩. ইউজারের ড্যাশবোর্ডে দেখানোর জন্য হিস্ট্রি বা লগ সেভ করা
-    const submissionLog = await Submission.create({
-        user: user._id,
-        apiKey: apiKeyDoc._id,
-        senderName: user.fullName, // যিনি API Key বানিয়েছেন তার নাম
-        senderEmail: user.email,
-        receiverEmail: toEmail,
+        senderName: senderName,
+        senderEmail: senderEmail,
+        toEmail: ownerUser.email, // প্রাপক হলো API Key-এর মালিক
         subject: subject,
         message: message,
-        ipAddress: req.ip || req.connection.remoteAddress, // রিকোয়েস্টের IP Address ট্র্যাক করা
+        ipAddress: clientIp // IP Address পাঠানো হলো
+    });
+
+    let emailStatus = "sent"; 
+
+    // ৬. ডেটাবেসে লগ সেভ করা
+    const submissionLog = await Submission.create({
+        user: ownerUser._id,
+        apiKey: apiKeyDoc._id,
+        senderName: senderName, 
+        senderEmail: senderEmail, 
+        receiverEmail: ownerUser.email, 
+        subject: subject,
+        message: message,
+        ipAddress: clientIp, 
         status: emailStatus
     });
 
@@ -45,9 +55,9 @@ const sendEmail = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Failed to log the email submission");
     }
 
-    // ৪. API Key-এর ইউসেজ কাউন্ট ১ বাড়িয়ে দেওয়া
+    // ৭. API Key-এর ইউসেজ কাউন্ট বাড়ানো
     apiKeyDoc.usageCount += 1;
-    await apiKeyDoc.save({ validateBeforeSave: false }); // pre-save হুক যেন আবার নতুন Key জেনারেট না করে, তাই validateBeforeSave বন্ধ রাখা হলো
+    await apiKeyDoc.save({ validateBeforeSave: false });
 
     return res.status(200).json(
         new ApiResponse(200, submissionLog, "Email processed and logged successfully")
