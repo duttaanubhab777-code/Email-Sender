@@ -13,12 +13,25 @@ const sendEmailService = async (options) => {
             },
         });
 
-        const mailOptions = {
-            from: `"${options.senderName}" <${process.env.SMTP_USER}>`, 
-            to: options.toEmail,                                         
-            subject: options.subject,                                    
-            text: options.message,                                       
-        };
+            const mailOptions = {
+        from: `"${options.senderName}" <${process.env.SMTP_USER}>`,
+        to: options.toEmail,
+        subject: options.subject,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 600px;">
+                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Email Transaction Details</h2>
+                
+                <p><strong>👤 Sender Name:</strong> ${options.senderName}</p>
+                <p><strong>🎯 Receiver Email:</strong> ${options.toEmail}</p>
+                <p><strong>🌐 IP Address:</strong> ${options.ipAddress || "N/A"}</p>
+                
+                <div style="margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #3498db;">
+                    <h4 style="margin-top: 0; color: #555;">Message Content:</h4>
+                    <p style="font-size: 16px; color: #333; line-height: 1.5;">${options.message}</p>
+                </div>
+            </div>
+        `
+    };
 
         const info = await transporter.sendMail(mailOptions);
         return info;
