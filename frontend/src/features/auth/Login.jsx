@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import "../../styles/Register.css";
+import { useToast } from "../../components/Toast";
+import { Brand } from "../../components/AppShell";
+import Icon from "../../components/Icons";
+import AuthHero from "./AuthHero";
+import "../../styles/auth.css";
 
 export default function Login() {
   const { login } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,79 +18,94 @@ export default function Login() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
+  const [shake, setShake] = useState(0); // এরর এলে কার্ড ঝাঁকানোর জন্য
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e) {
-    e.preventDefault(); // ব্রাউজারের ডিফল্ট রিলোড আটকাও
+    e.preventDefault();
     setError("");
     setSubmitting(true);
 
     try {
       const id = identifier.trim();
-      // @ থাকলে ইমেইল হিসেবে পাঠাবে, না থাকলে ইউজারনেম হিসেবে
+      // @ থাকলে ইমেইল, না থাকলে ইউজারনেম
       const payload = id.includes("@")
         ? { email: id.toLowerCase(), password }
         : { username: id.toLowerCase(), password };
 
-      await login(payload);
-      
-      // লগইন সফল হলে ড্যাশবোর্ডে পাঠাও (replace: true দিলে ব্যাক বাটনে আর লগইন পেজে ফিরবে না)
+      const u = await login(payload);
+      toast.success(`Welcome back, ${u.fullName}!`);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.message); // ভুল পাসওয়ার্ড বা এরর মেসেজ দেখাও
+      setError(err.message);
+      setShake(s => s + 1);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="login-container"> 
-      <div className="glass-card login-card">
-        <h2 className="login-title">Welcome Back</h2>
-        
-        {error && <p className="error-message">{error}</p>}
-        
-        <form onSubmit={handleSubmit} className="login-form">
-          
-          <div className="input-group">
-            <label className="input-label">Email or Username</label>
-            <input
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value.toLowerCase())}
-              placeholder="Enter your email or username"
-              required
-              className="input-field"
-            />
-          </div>
-          
-          <div className="input-group">
-            <label className="input-label">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              className="input-field"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={submitting}
-            className="submit-btn"
-          >
-            {submitting ? "Checking..." : "Login"}
-          </button>
+    <div className="auth-page">
+      <AuthHero />
 
-        </form>
-        
-        <p className="register-redirect-text">
-          Don't have an account? <Link to="/register" className="register-link">Register here</Link>
-        </p>
-      </div>
+      <section className="auth-side">
+        <div key={shake} className={`card auth-card reveal ${shake ? "shake" : ""}`}>
+          <div className="auth-mobile-brand"><Brand /></div>
+          <h2>Welcome back</h2>
+          <p className="sub">Sign in to manage your API keys.</p>
+
+          {error && (
+            <div className="alert alert-error" role="alert">
+              <Icon name="alert" size={18} /> <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="form">
+            <label className="field">
+              <span className="field-label">Email or username</span>
+              <span className="field-box">
+                <Icon name="user" size={18} />
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value.toLowerCase())}
+                  placeholder="you@example.com"
+                  autoComplete="username"
+                  required
+                />
+              </span>
+            </label>
+
+            <label className="field">
+              <span className="field-label">Password</span>
+              <span className="field-box">
+                <Icon name="lock" size={18} />
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button type="button" className="eye" onClick={() => setShowPw(v => !v)} aria-label="Show or hide password">
+                  <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </span>
+            </label>
+
+            <button type="submit" disabled={submitting} className="btn btn-primary btn-block">
+              {submitting ? <><span className="spin" /> Signing in...</> : <>Sign in <Icon name="send" size={17} className="fly" /></>}
+            </button>
+          </form>
+
+          <p className="switch-text">
+            Don't have an account? <Link to="/register">Create one</Link>
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

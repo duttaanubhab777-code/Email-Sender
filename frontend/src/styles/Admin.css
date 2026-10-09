@@ -1,0 +1,11 @@
+/* অ্যাডমিন */
+.search { margin-bottom: 14px; }
+.user-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.user-row { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.025); border: 1px solid transparent; animation: reveal 0.5s var(--ease) both; animation-delay: calc(min(var(--i, 0), 12) * 40ms); transition: 0.25s var(--ease); }
+.user-row:hover { background: var(--surface); border-color: var(--border); transform: translateX(3px); }
+.user-row.blocked { opacity: 0.65; }
+.user-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.user-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-info em { color: var(--cyan); font-style: normal; font-size: 0.8rem; }
+.user-info small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { .user-row { flex-wrap: wrap; } .user-row .btn { width: 100%; } }

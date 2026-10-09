@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 export class ApiError extends Error {
     constructor(message, status, data = null) {
         super(message);
@@ -40,7 +40,7 @@ export async function request(
         res = await fetch(`${BASE_URL}${path}`, options);
     } catch (err) {
         if (err.name === "AbortError") throw err; // ইচ্ছা কৃত বাতি ল — চুপচা প ছা ড়ো
-        throw new ApiError("could not cooonet the server", 0);
+        throw new ApiError("Unable to connect to the server", 0);
     }
     // ৪০১ হলে একবার টো কে ন রি ফ্রে শ করে আবার চে ষ্টা (পরে র ধা প দে খো )
     if (res.status === 401 && retry && canRefresh(path)) {
@@ -60,7 +60,7 @@ export async function request(
     const json = await parseJson(res);
     if (!res.ok) {
         throw new ApiError(
-            json?.message || `কি ছু একটা ভুল হয়ে ছে (${res.status})`,
+            json?.message || `Something went wrong (${res.status})`,
             res.status,
             json
         );
@@ -122,4 +122,13 @@ export const sendMail = (apiKey, payload) =>
         method: "POST",
         body: payload,
         headers: { "x-api-key": apiKey }
+    });
+
+// ---------- Admin (ব্যাকএন্ডে এই এন্ডপয়েন্টগুলো যোগ করতে হবে) ----------
+export const getAdminStats = signal => request("/admin/stats", { signal });
+export const getAdminUsers = signal => request("/admin/users", { signal });
+export const toggleBlockUser = (userId, isBlocked) =>
+    request(`/admin/users/${userId}/block`, {
+        method: "PATCH",
+        body: { isBlocked }
     });
