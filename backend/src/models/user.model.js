@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema(
             unique: true,
             sparse: true // if apikey then not check the unique
         },
+      monthlyEmailLimit: {
+    type: Number,
+    default: 500 
+      },
 
         refreshToken: {
             type: String
@@ -78,6 +82,16 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
+
+const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
+
+  if (this.isNew && this.email === superAdminEmail ) {
+
+    this.role = "admin";
+    this.isSuperAdmin = true
+  }
+
+  
     if (!this.isModified("password")) return;
 
     this.password = await bcrypt.hash(this.password, 10);

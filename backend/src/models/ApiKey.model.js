@@ -27,11 +27,8 @@ const apiKeySchema = new mongoose.Schema(
         usageCount: {
             type: Number,
             default: 0 
-        },
-        monthlyLimit: {
-            type: Number,
-            default: 500 
         }
+        
     },
     { timestamps: true }
 );
