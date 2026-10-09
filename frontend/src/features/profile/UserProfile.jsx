@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { updateAccount, updateAvatar, changePassword } from "../../services/api";
+import { updateAccount, updateAvatar, changePassword, getCurrentUser } from "../../services/api";
 import { useToast } from "../../components/Toast";
 import Avatar from "../../components/Avatar";
 import Icon from "../../components/Icons";
@@ -16,6 +16,18 @@ export default function UserProfile() {
   const { user, setUser } = useAuth();
   const toast = useToast();
   const fileRef = useRef(null);
+
+  // ---- লগইন হিস্ট্রি: শুধু অ্যাডমিন দেখবে ----
+  const isAdmin = user?.role === "admin";
+  const [history, setHistory] = useState([]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    let ignore = false;
+    getCurrentUser()
+      .then(u => { if (!ignore) setHistory([...(u.loginHistory || [])].reverse()); })
+      .catch(() => { if (!ignore) setHistory([]); });
+    return () => { ignore = true; };
+  }, [isAdmin]);
 
   // ---- অ্যাভাটার ----
   const [file, setFile] = useState(null);
@@ -83,7 +95,6 @@ export default function UserProfile() {
     }
   }
 
-  const history = [...(user?.loginHistory || [])].reverse();
   const joined = user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : null;
 
   return (
@@ -178,7 +189,8 @@ export default function UserProfile() {
         </section>
       </div>
 
-      {/* লগইন হিস্ট্রি */}
+      {/* লগইন হিস্ট্রি — শুধু অ্যাডমিন */}
+      {isAdmin && (
       <section className="card reveal" style={{ "--i": 3 }}>
         <div className="card-head">
           <h3><Icon name="clock" size={18} /> Recent sign-ins</h3>
@@ -201,6 +213,7 @@ export default function UserProfile() {
           </ol>
         )}
       </section>
+      )}
     </div>
   );
 }

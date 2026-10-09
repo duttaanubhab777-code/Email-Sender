@@ -3,8 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiKey } from "../models/ApiKey.model.js";
 
 const verifyApiKey = asyncHandler(async (req, res, next) => {
-    // ১. রিকোয়েস্টের হেডার থেকে API Key টা খোঁজা (ডেভেলপাররা সাধারণত 'x-api-key' নামে পাঠায়)
-    const providedKey = req.header("x-api-key") || req.query.apiKey;
+    
+    const providedKey = req.header("x-api-key") || req.body?.access_key || req.query.apiKey;
 
     if (!providedKey) {
         throw new ApiError(401, "API Key is missing in the request header");

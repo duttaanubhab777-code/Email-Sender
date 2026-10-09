@@ -237,14 +237,14 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, {}, "password changed successfully"));
 });
-
 const getCurrentUser = asyncHandler(async (req, res) => {
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, req.user, "current user fetched Successfully")
-        );
+    let user = req.user;
+    if (user.role === "admin") {
+        user = await User.findById(user._id).select("-password -refreshToken +loginHistory");
+    }
+    return res.status(200).json(new ApiResponse(200, user, "current user fetched Successfully"));
 });
+
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullName } = req.body;

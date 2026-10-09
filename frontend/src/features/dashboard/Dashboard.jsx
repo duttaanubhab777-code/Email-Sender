@@ -7,9 +7,54 @@ import Avatar from "../../components/Avatar";
 import CountUp from "../../components/CountUp";
 import Ring from "../../components/Ring";
 import Icon from "../../components/Icons";
+import logoMark from "../../assets/logo-mark.png";
 import "../../styles/Dashboard.css";
 
 const mask = k => (k.length > 16 ? `${k.slice(0, 12)}${"•".repeat(12)}${k.slice(-4)}` : k);
+
+// ---- Quick start: ready-made form (the same CSS is used in the snippet and in the live preview) ----
+const ES_CSS = `.es-form {
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.es-field { margin-bottom: 16px; }
+.es-field label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: #1f2937; }
+.es-field input, .es-field textarea {
+  width: 100%; box-sizing: border-box; padding: 12px 14px;
+  font: inherit; font-size: 15px; color: #111827;
+  background: #f9fafb; border: 1px solid #d1d5db; border-radius: 10px;
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.es-field input:focus, .es-field textarea:focus {
+  border-color: #2563eb; background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
+}
+.es-field textarea { min-height: 120px; resize: vertical; }
+.es-btn {
+  width: 100%; padding: 13px 18px; font: inherit; font-size: 15px; font-weight: 700;
+  color: #fff; background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  border: 0; border-radius: 10px; cursor: pointer; transition: transform .15s, box-shadow .2s;
+}
+.es-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 99, 235, .35); }
+.es-hp { position: absolute; left: -9999px; width: 0; height: 0; opacity: 0; }
+.es-badge {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 16px; font-size: 12px; color: #6b7280; text-decoration: none;
+}
+.es-badge img { width: 18px; height: 18px; }
+.es-badge b { color: #1d4ed8; }
+.es-badge:hover b { color: #ea580c; }`;
+
+// Public origin of the API (used for the badge logo hosted in backend/public)
+const apiOrigin = () => {
+  try { return new URL(BASE_URL).origin; } catch { return window.location.origin; }
+};
 
 function DashboardSkeleton() {
   return (
@@ -38,6 +83,327 @@ export default function Dashboard() {
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [newId, setNewId] = useState(null); // নতুন কার্ডে হাইলাইট অ্যানিমেশন
+  const [snipTab, setSnipTab] = useState("styled"); // "styled" | "plain"
+  const [snipKeyId, setSnipKeyId] = useState(null); // কুইক স্টার্টে কোন Key দেখাবে
+
+  const load = useCallback(signal => {
+    setLoading(true);
+    setError("");
+    return getDashboard(signal)
+      .then(setData)
+      .catch(err => { if (err.name !== "AbortError") setError(err.message); })
+      .finally(() => { if (!signal?.aborted) setLoading(false); });
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setCreating(true);
+    try {
+      const newKey = await createApiKey(name.trim());
+      setData(d => ({ ...d, totalApiKeys: d.totalApiKeys + 1, apiKeysList: [newKey, ...d.apiKeysList] }));
+      setNewId(newKey._id);
+      setName("");
+      toast.success("New API key created");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function copyText(text, id) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(c => (c === id ? null : c)), 1600);
+    } catch {
+      window.prompt("Copy this key:", text);
+    }
+  }
+
+  async function confirmDelete() {
+    setDeleting(true);
+    try {
+      await deleteApiKey(toDelete._id);
+      setData(d => ({
+        ...d,
+        totalApiKeys: d.totalApiKeys - 1,
+        apiKeysList: d.apiKeysList.filter(k => k._id !== toDelete._id)
+      }));
+      toast.success("API key deleted");
+      setToDelete(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (loading && !data) return <DashboardSkeleton />;
+
+  if (error) {
+    return (
+      <div className="card empty reveal">
+        <div className="empty-ic bad"><Icon name="alert" size={30} /></div>
+        <h3>Could not load data</h3>
+        <p>{error}</p>
+        <button className="btn btn-primary" onClick={() => load()}>Try again</button>
+      </div>
+    );
+  }
+
+  const { fullName, avatar, totalApiKeys, totalEmailsSent, apiKeysList = [] } = data;
+  const used = apiKeysList.reduce((s, k) => s + (k.usageCount || 0), 0);
+  const limit = apiKeysList.reduce((s, k) => s + (k.monthlyLimit || 0), 0);
+  const totalPercent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+  // কুইক স্টার্টের Key: বেছে নেওয়াটা, না থাকলে প্রথমটা
+  const snipKey = apiKeysList.find(k => k._id === snipKeyId) || apiKeysList[0];
+
+  // shown = স্ক্রিনে (মাস্কড Key), copy = কপি করলে (আসল Key)
+  const buildSnippet = key => {
+    const fields = `  <input type="hidden" name="access_key" value="${key}">
+  <input type="hidden" name="redirect" value="https://your-site.com/thank-you">
+  <input type="text" name="botcheck" class="es-hp" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off" aria-hidden="true">`;
+
+    if (snipTab === "plain") {
+      return `<!-- Email Sender contact form (unstyled: add your own CSS) -->
+<form class="es-form" action="${BASE_URL}/mail/send" method="POST">
+${fields}
+
+  <div class="es-field">
+    <label for="es-name">Name</label>
+    <input id="es-name" type="text" name="name" required>
+  </div>
+  <div class="es-field">
+    <label for="es-email">Email</label>
+    <input id="es-email" type="email" name="email" required>
+  </div>
+  <div class="es-field">
+    <label for="es-subject">Subject</label>
+    <input id="es-subject" type="text" name="subject" required>
+  </div>
+  <div class="es-field">
+    <label for="es-message">Message</label>
+    <textarea id="es-message" name="message" rows="5" required></textarea>
+  </div>
+
+  <button type="submit" class="es-btn">Send message</button>
+</form>`;
+    }
+
+    return `<!-- Email Sender contact form -->
+<style>
+${ES_CSS}
+</style>
+
+<form class="es-form" action="${BASE_URL}/mail/send" method="POST">
+${fields}
+
+  <div class="es-field">
+    <label for="es-name">Name</label>
+    <input id="es-name" type="text" name="name" placeholder="John Doe" required>
+  </div>
+  <div class="es-field">
+    <label for="es-email">Email</label>
+    <input id="es-email" type="email" name="email" placeholder="john@example.com" required>
+  </div>
+  <div class="es-field">
+    <label for="es-subject">Subject</label>
+    <input id="es-subject" type="text" name="subject" placeholder="How can we help?" required>
+  </div>
+  <div class="es-field">
+    <label for="es-message">Message</label>
+    <textarea id="es-message" name="message" rows="5" placeholder="Write your message..." required></textarea>
+  </div>
+
+  <button type="submit" class="es-btn">Send message</button>
+
+  <a class="es-badge" href="${window.location.origin}" target="_blank" rel="noopener">
+    Powered by <img src="${apiOrigin()}/badge-logo.png" alt=""> <b>Email Sender</b>
+  </a>
+</form>`;
+  };
+  const shownSnippet = buildSnippet(snipKey ? mask(snipKey.key) : "YOUR_API_KEY");
+  const copySnippet = buildSnippet(snipKey ? snipKey.key : "YOUR_API_KEY");
+
+  return (
+    <div className="stack">
+      <div className="skeleton sk-hero" />
+      <div className="stats-grid">
+        <div className="skeleton sk-stat" /><div className="skeleton sk-stat" /><div className="skeleton sk-stat" />
+      </div>
+      <div className="skeleton sk-block" />
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const toast = useToast();
+
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+  const [revealed, setRevealed] = useState({});
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [newId, setNewId] = useState(null); // নতুন কার্ডে হাইলাইট অ্যানিমেশন
+  const [snipTab, setSnipTab] = useState("styled"); // "styled" | "plain"
+  const [snipKeyId, setSnipKeyId] = useState(null); // কুইক স্টার্টে কোন Key দেখাবে
+
+  const load = useCallback(signal => {
+    setLoading(true);
+    setError("");
+    return getDashboard(signal)
+      .then(setData)
+      .catch(err => { if (err.name !== "AbortError") setError(err.message); })
+      .finally(() => { if (!signal?.aborted) setLoading(false); });
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setCreating(true);
+    try {
+      const newKey = await createApiKey(name.trim());
+      setData(d => ({ ...d, totalApiKeys: d.totalApiKeys + 1, apiKeysList: [newKey, ...d.apiKeysList] }));
+      setNewId(newKey._id);
+      setName("");
+      toast.success("New API key created");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function copyText(text, id) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(c => (c === id ? null : c)), 1600);
+    } catch {
+      window.prompt("Copy this key:", text);
+    }
+  }
+
+  async function confirmDelete() {
+    setDeleting(true);
+    try {
+      await deleteApiKey(toDelete._id);
+      setData(d => ({
+        ...d,
+        totalApiKeys: d.totalApiKeys - 1,
+        apiKeysList: d.apiKeysList.filter(k => k._id !== toDelete._id)
+      }));
+      toast.success("API key deleted");
+      setToDelete(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (loading && !data) return <DashboardSkeleton />;
+
+  if (error) {
+    return (
+      <div className="card empty reveal">
+        <div className="empty-ic bad"><Icon name="alert" size={30} /></div>
+        <h3>Could not load data</h3>
+        <p>{error}</p>
+        <button className="btn btn-primary" onClick={() => load()}>Try again</button>
+      </div>
+    );
+  }
+
+  const { fullName, avatar, totalApiKeys, totalEmailsSent, apiKeysList = [] } = data;
+  const used = apiKeysList.reduce((s, k) => s + (k.usageCount || 0), 0);
+  const limit = apiKeysList.reduce((s, k) => s + (k.monthlyLimit || 0), 0);
+  const totalPercent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+  // কুইক স্টার্টের Key: বেছে নেওয়াটা, না থাকলে প্রথমটা
+  const snipKey = apiKeysList.find(k => k._id === snipKeyId) || apiKeysList[0];
+
+  // shown = স্ক্রিনে (মাস্কড Key), copy = কপি করলে (আসল Key)
+  const buildSnippet = key => (snipTab === "form"
+    ? `<form action="${BASE_URL}/mail/send" method="POST">
+  <!-- Your API key -->
+  <input type="hidden" name="access_key" value="${key}">
+  <!-- Where to send the visitor after submit -->
+  <input type="hidden" name="redirect" value="https://your-site.com/thank-you">
+  <!-- Spam trap: keep hidden -->
+  <input type="text" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+
+  <input type="text" name="name" placeholder="Your name" required>
+  <input type="email" name="email" placeholder="Your email" required>
+  <input type="text" name="subject" placeholder="Subject" required>
+  <textarea name="message" placeholder="Your message" required></textarea>
+  <button type="submit">Send message</button>
+</form>`
+    : `fetch("${BASE_URL}/mail/send", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": "${key}"
+  },
+  body: JSON.stringify({
+    name: "Rahim",
+    email: "rahim@example.com",
+    subject: "Hello",
+    message: "Contact form message"
+  })
+});`);
+  const shownSnippet = buildSnippet(snipKey ? mask(snipKey.key) : "YOUR_API_KEY");
+  const copySnippet = buildSnippet(snipKey ? snipKey.key : "YOUR_API_KEY");
+
+  return (
+    <div className="stack">
+      <div className="skeleton sk-hero" />
+      <div className="stats-grid">
+        <div className="skeleton sk-stat" /><div className="skeleton sk-stat" /><div className="skeleton sk-stat" />
+      </div>
+      <div className="skeleton sk-block" />
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const toast = useToast();
+
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+  const [revealed, setRevealed] = useState({});
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [newId, setNewId] = useState(null); // নতুন কার্ডে হাইলাইট অ্যানিমেশন
+  const [snipTab, setSnipTab] = useState("styled"); // "styled" | "plain"
+  const [snipKeyId, setSnipKeyId] = useState(null); // কুইক স্টার্টে কোন Key দেখাবে
 
   const load = useCallback(signal => {
     setLoading(true);
@@ -232,11 +598,57 @@ export default function Dashboard() {
       <section className="card reveal" style={{ "--i": 6 }}>
         <div className="card-head">
           <h3><Icon name="terminal" size={18} /> Quick start</h3>
-          <button className={`btn btn-ghost btn-sm ${copiedId === "snip" ? "ok" : ""}`} onClick={() => copyText(snippet, "snip")}>
-            <Icon name={copiedId === "snip" ? "check" : "copy"} size={15} /> {copiedId === "snip" ? "Copied" : "Copy"}
+          <button className={`btn btn-ghost btn-sm ${copiedId === "snip" ? "ok" : ""}`} onClick={() => copyText(copySnippet, "snip")}>
+            <Icon name={copiedId === "snip" ? "check" : "copy"} size={15} /> {copiedId === "snip" ? "Copied" : "Copy code"}
           </button>
         </div>
-        <pre className="snippet"><code>{snippet}</code></pre>
+
+        <ol className="steps">
+          <li><b>1</b><span>Choose a form style and copy the code.</span></li>
+          <li><b>2</b><span>Paste it into your website's HTML where the form should appear.</span></li>
+          <li><b>3</b><span>Replace the <code>redirect</code> URL with your own thank-you page.</span></li>
+        </ol>
+
+        <div className="snippet-bar">
+          <div className="code-tabs" role="tablist">
+            <button role="tab" aria-selected={snipTab === "styled"} className={`code-tab ${snipTab === "styled" ? "active" : ""}`} onClick={() => setSnipTab("styled")}>Ready-made form</button>
+            <button role="tab" aria-selected={snipTab === "plain"} className={`code-tab ${snipTab === "plain" ? "active" : ""}`} onClick={() => setSnipTab("plain")}>HTML only</button>
+          </div>
+          {apiKeysList.length > 1 && (
+            <select className="key-select" value={snipKey?._id} onChange={e => setSnipKeyId(e.target.value)} aria-label="Choose API key">
+              {apiKeysList.map(k => <option key={k._id} value={k._id}>{k.name}</option>)}
+            </select>
+          )}
+        </div>
+
+        <p className="muted small">
+          {snipTab === "styled"
+            ? "A complete, responsive contact form with built-in styling and spam protection."
+            : "Only the form structure with all required fields wired up. Style it with your own CSS."}
+        </p>
+
+        {snipTab === "styled" && (
+          <div className="preview-frame">
+            <div className="frame-bar"><i /><i /><i /><span>your-website.com/contact</span></div>
+            <div className="frame-body">
+              <style>{ES_CSS}</style>
+              <form className="es-form" onSubmit={e => { e.preventDefault(); toast.info("This is a preview. The form is not submitted."); }}>
+                <div className="es-field"><label htmlFor="pv-name">Name</label><input id="pv-name" type="text" placeholder="John Doe" /></div>
+                <div className="es-field"><label htmlFor="pv-email">Email</label><input id="pv-email" type="email" placeholder="john@example.com" /></div>
+                <div className="es-field"><label htmlFor="pv-subject">Subject</label><input id="pv-subject" type="text" placeholder="How can we help?" /></div>
+                <div className="es-field"><label htmlFor="pv-message">Message</label><textarea id="pv-message" rows="4" placeholder="Write your message..." /></div>
+                <button type="submit" className="es-btn">Send message</button>
+                <a className="es-badge" href={window.location.origin} target="_blank" rel="noopener noreferrer" onClick={e => e.preventDefault()}>
+                  Powered by <img src={logoMark} alt="" /> <b>Email Sender</b>
+                </a>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <div className="code-label">{snipTab === "styled" ? "Code" : "HTML"}</div>
+        <pre className="snippet snippet-tall"><code>{shownSnippet}</code></pre>
+        {!snipKey && <p className="hint">Create an API key above and it will be filled in here automatically.</p>}
       </section>
 
       <ConfirmModal

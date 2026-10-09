@@ -39,28 +39,26 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: null
         },
-        loginHistory: [
-            {
-                ipAddress: {
-                    type: String
-                },
-                loginTime: {
-                    type: Date,
-                    default: Date.now
+        loginHistory: {
+            type: [
+                {
+                    ipAddress: { type: String },
+                    loginTime: { type: Date, default: Date.now }
                 }
-            }
-        ],
-      role: {
+            ],
+            select: false
+        },
+        role: {
             type: String,
             enum: ["user", "admin"],
             default: "user",
             index: true
         },
-      isSuperAdmin: {
+        isSuperAdmin: {
             type: Boolean,
             default: false
         },
-      isBlocked: {
+        isBlocked: {
             type: Boolean,
             default: false
         },
@@ -71,7 +69,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             sparse: true // if apikey then not check the unique
         },
-      
+
         refreshToken: {
             type: String
         }
@@ -80,10 +78,6 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-
-
-  
-    
     if (!this.isModified("password")) return;
 
     this.password = await bcrypt.hash(this.password, 10);
