@@ -24,6 +24,20 @@ const uploadOnCloudinary = async localFilePath => {
         // remove the locally saved temporary file as the upload operation got failed
         return null;
     }
+
+  const deleteFromCloudinary = async (publicId) => {
+    try {
+        if (!publicId) return null;
+        // publicId ব্যবহার করে Cloudinary থেকে ফাইল মুছে ফেলা
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: "auto"
+        });
+        return response;
+    } catch (error) {
+        console.log("Error deleting from cloudinary:", error);
+        return null;
+    }
+};
 };
 
-export { uploadOnCloudinary };
+export { uploadOnCloudinary, deleteFromCloudinary };

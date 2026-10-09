@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -270,6 +270,9 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         );
 });
 
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+// অন্যান্য প্রয়োজনীয় ইমপোর্টগুলো আগের মতোই থাকবে...
+
 const updateAvatar = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.file?.path;
 
@@ -277,26 +280,43 @@ const updateAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Avatar file is missing");
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    // ১. প্রথমে ডেটাবেস থেকে ইউজারের বর্তমান ডেটা নিয়ে আসা
+    const user = await User.findById(req.user?._id);
 
-    if (!avatar.url) {
-        throw new ApiError(400, "Error while uploading on avatar");
+    // ২. নতুন ছবি Cloudinary-তে আপলোড করা হচ্ছে
+    const newAvatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!newAvatar || !newAvatar.url) {
+        throw new ApiError(400, "Error while uploading new avatar");
     }
 
-    const user = await User.findByIdAndUpdate(
+    // ৩. ইউজারের যদি আগে থেকে কোনো ছবি থাকে, সেটা Cloudinary থেকে ডিলিট করা
+    if (user.avatar) {
+        // Cloudinary-র URL থেকে publicId বের করার লজিক 
+        // যেমন: "http://res.cloudinary.com/.../v1234/abc.jpg" থেকে "abc" বের করবে
+        const oldAvatarUrl = user.avatar;
+        const urlParts = oldAvatarUrl.split('/');
+        const filePart = urlParts.pop(); // "abc.jpg"
+        const publicId = filePart.split('.')[0]; // "abc"
+        
+        // Cloudinary থেকে পুরনো ছবিটি মুছে ফেলা হচ্ছে
+        await deleteFromCloudinary(publicId);
+    }
+
+    // ৪. ডেটাবেসে ইউজারের নতুন ছবির URL আপডেট করা
+    const updatedUser = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
-                avatar: avatar.url
+                avatar: newAvatar.url
             }
         },
-
         { new: true }
     ).select("-password");
 
     return res
         .status(200)
-        .json(new ApiResponse(200, user, "avatar uploaded successfully"));
+        .json(new ApiResponse(200, updatedUser, "Avatar updated successfully"));
 });
 
 import mongoose from "mongoose";
@@ -342,18 +362,23 @@ const getUserDashboardStats = asyncHandler(async (req, res) => {
                 }
             }
         },
-        {
-            // ৫. $project: ফ্রন্টএন্ডে শুধু দরকারি ডেটা পাঠানো
+         {
             $project: {
                 fullName: 1,
                 email: 1,
                 avatar: 1,
+                monthlyEmailLimit: 1,
                 totalApiKeys: 1,
                 totalEmailsSent: 1,
-                apiKeysList: 1 // API Key এর লিস্ট ড্যাশবোর্ডে দেখানোর জন্য পাঠানো হলো
-                // খেয়াল করো: allSubmissions এখানে দিইনি, তাই বিশাল ডেটা ফ্রন্টএন্ডে গিয়ে সার্ভার স্লো করবে না!
+                emailsRemaining: {
+                    $subtract: ["$monthlyEmailLimit", "$totalEmailsSent"]
+                },
+                apiKeysList: 1, 
+                
+                // এই লাইনটি যোগ করলেই ইউজারের পাঠানো সমস্ত ইমেইলের ডেটা ফ্রন্টএন্ডে চলে যাবে
+                allSubmissions: 1 
             }
-        }
+         }
     ]);
 
     // যদি কোনো কারণে ইউজারের ডেটা না পাওয়া যায়
