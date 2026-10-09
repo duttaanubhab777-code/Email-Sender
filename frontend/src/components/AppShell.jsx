@@ -4,11 +4,13 @@ import { useToast } from "./Toast";
 import Backdrop from "./Backdrop";
 import Avatar from "./Avatar";
 import Icon from "./Icons";
+import ThemeToggle from "./ThemeToggle";
+import { LogoMark } from "./Logo";
 
 export function Brand() {
   return (
     <span className="brand">
-      <span className="brand-mark"><Icon name="mail" size={18} /></span>
+      <LogoMark size={40} className="brand-logo" />
       <span className="brand-text">Email<b>Sender</b></span>
     </span>
   );
@@ -52,6 +54,7 @@ export default function AppShell() {
           </nav>
 
           <div className="topbar-right">
+            <ThemeToggle />
             <NavLink to="/profile" className="topbar-user">
               <Avatar src={user?.avatar} name={user?.fullName} size={34} />
               <span>{user?.username}</span>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/api";
 import { useToast } from "../../components/Toast";
-import { Brand } from "../../components/AppShell";
+import { LogoFull } from "../../components/Logo";
 import Icon from "../../components/Icons";
 import AuthHero from "./AuthHero";
 import "../../styles/auth.css";
@@ -70,7 +70,7 @@ export default function Register() {
 
       <section className="auth-side">
         <div key={shake} className={`card auth-card reveal ${shake ? "shake" : ""}`}>
-          <div className="auth-mobile-brand"><Brand /></div>
+          <div className="auth-mobile-brand"><LogoFull width={210} className="auth-logo-full" /></div>
           <h2>Create your account</h2>
           <p className="sub">Get started in under a minute.</p>
 

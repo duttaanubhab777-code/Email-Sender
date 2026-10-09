@@ -1,5 +1,6 @@
 import { Brand } from "../../components/AppShell";
 import Icon from "../../components/Icons";
+import logoMark from "../../assets/logo-mark.png";
 
 // অথ পেজের বাঁ দিকের (ডেস্কটপে) অ্যানিমেটেড হিরো
 export default function AuthHero() {
@@ -14,7 +15,7 @@ export default function AuthHero() {
       <div className="hero-art" aria-hidden="true">
         <span className="orbit o1"><i /></span>
         <span className="orbit o2"><i /></span>
-        <div className="hero-envelope"><Icon name="mail" size={64} /></div>
+        <img className="hero-logo" src={logoMark} alt="Email Sender" draggable="false" />
       </div>
       <h1>Your website's<br /><span className="grad-text">email pipeline</span></h1>
       <ul className="hero-list">

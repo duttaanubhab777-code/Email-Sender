@@ -1,11 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#07080d" />
     <title>Email Sender — Contact form API</title>
+    <script>
+      // থিম ফ্ল্যাশ আটকাতে পেজ আঁকার আগেই থিম বসানো
+      (function () {
+        try {
+          var t = localStorage.getItem("es-theme");
+          if (t !== "light" && t !== "dark") t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", t);
+          if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f3faf7");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

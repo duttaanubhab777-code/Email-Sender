@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../components/Toast";
-import { Brand } from "../../components/AppShell";
+import { LogoFull } from "../../components/Logo";
 import Icon from "../../components/Icons";
 import AuthHero from "./AuthHero";
 import "../../styles/auth.css";
@@ -52,7 +52,7 @@ export default function Login() {
 
       <section className="auth-side">
         <div key={shake} className={`card auth-card reveal ${shake ? "shake" : ""}`}>
-          <div className="auth-mobile-brand"><Brand /></div>
+          <div className="auth-mobile-brand"><LogoFull width={210} className="auth-logo-full" /></div>
           <h2>Welcome back</h2>
           <p className="sub">Sign in to manage your API keys.</p>
 
