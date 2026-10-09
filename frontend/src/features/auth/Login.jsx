@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import "../../styles/Register.css";
 
 export default function Login() {
   const { login } = useAuth();
@@ -40,51 +41,49 @@ export default function Login() {
 
   return (
     <div className="login-container"> 
-      {/* এখানে তোমার গ্লাস কার্ডের CSS ক্লাস বসবে */}
-      <div className="glass-card" style={{ padding: '2rem', maxWidth: '400px', margin: 'auto', marginTop: '10vh' }}>
-        <h2 style={{ textAlign: 'center', color: 'white' }}>Welcome Back</h2>
+      <div className="glass-card login-card">
+        <h2 className="login-title">Welcome Back</h2>
         
-        {/* এরর থাকলে লাল রঙে দেখাবে */}
-        {error && <p style={{ color: "#ff4d4d", textAlign: "center" }}>{error}</p>}
+        {error && <p className="error-message">{error}</p>}
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} className="login-form">
           
           <div className="input-group">
-            <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Email or Username</label>
+            <label className="input-label">Email or Username</label>
             <input
               type="text"
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => setIdentifier(e.target.value.toLowerCase())}
               placeholder="Enter your email or username"
               required
-              style={{ width: '100%', padding: '10px', borderRadius: '5px', border: 'none' }}
+              className="input-field"
             />
           </div>
           
           <div className="input-group">
-            <label style={{ color: 'white', display: 'block', marginBottom: '5px' }}>Password</label>
+            <label className="input-label">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
-              style={{ width: '100%', padding: '10px', borderRadius: '5px', border: 'none' }}
+              className="input-field"
             />
           </div>
           
           <button 
             type="submit" 
             disabled={submitting}
-            style={{ padding: '10px', marginTop: '10px', borderRadius: '5px', border: 'none', cursor: 'pointer', backgroundColor: '#4a90e2', color: 'white', fontWeight: 'bold' }}
+            className="submit-btn"
           >
             {submitting ? "Checking..." : "Login"}
           </button>
 
         </form>
         
-        <p style={{ textAlign: 'center', color: 'white', marginTop: '15px' }}>
-          Don't have an account? <Link to="/register" style={{ color: '#4a90e2' }}>Register here</Link>
+        <p className="register-redirect-text">
+          Don't have an account? <Link to="/register" className="register-link">Register here</Link>
         </p>
       </div>
     </div>

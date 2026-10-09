@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
+import Dashboard from "./features/dashboard/Dashboard";
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
 
       {/* শুধু লগইন ইউজারদের জন্য */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<h1 style={{color: 'white'}}>Dashboard Page</h1>} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<h1 style={{color: 'white'}}>Profile Page</h1>} />
       </Route>
 

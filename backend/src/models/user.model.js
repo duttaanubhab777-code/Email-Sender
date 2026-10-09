@@ -50,6 +50,20 @@ const userSchema = new mongoose.Schema(
                 }
             }
         ],
+      role: {
+            type: String,
+            enum: ["user", "admin"],
+            default: "user",
+            index: true
+        },
+      isSuperAdmin: {
+            type: Boolean,
+            default: false
+        },
+      isBlocked: {
+            type: Boolean,
+            default: false
+        },
 
         apiKey: {
             type: String,
@@ -57,6 +71,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             sparse: true // if apikey then not check the unique
         },
+      
         refreshToken: {
             type: String
         }
