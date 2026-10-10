@@ -43,13 +43,18 @@ const otpInfo = email => ({
 
 const assertPassword = password => {
     if (!password || String(password).length < PASSWORD_MIN_LENGTH) {
-        throw new ApiError(400, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+        throw new ApiError(
+            400,
+            `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
+        );
     }
 };
 
 // email অথবা username (যেটাই আসুক) দিয়ে user খোঁজা
 const findByIdentifier = identifier => {
-    const id = String(identifier ?? "").trim().toLowerCase();
+    const id = String(identifier ?? "")
+        .trim()
+        .toLowerCase();
     if (!id) return null;
     return User.findOne(id.includes("@") ? { email: id } : { username: id });
 };
@@ -66,13 +71,17 @@ const genarateAccessAndRefreshTokens = async userId => {
         return { accessToken, refreshToken };
     } catch (error) {
         console.log("ACTUAL TOKEN ERROR: ", error);
-        throw new ApiError(500, "Something went wrong while genarating refrsh and access token");
+        throw new ApiError(
+            500,
+            "Something went wrong while genarating refrsh and access token"
+        );
     }
 };
 
 // OTP ঠিক হওয়ার পর token দেওয়া + login history লেখা
 const finishLogin = async (req, res, userId, message, status = 200) => {
-    const { accessToken, refreshToken } = await genarateAccessAndRefreshTokens(userId);
+    const { accessToken, refreshToken } =
+        await genarateAccessAndRefreshTokens(userId);
 
     await User.findByIdAndUpdate(userId, {
         $push: {
@@ -83,13 +92,21 @@ const finishLogin = async (req, res, userId, message, status = 200) => {
         }
     });
 
-    const loggedInUser = await User.findById(userId).select("-password -refreshToken");
+    const loggedInUser = await User.findById(userId).select(
+        "-password -refreshToken"
+    );
 
     return res
         .status(status)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .json(new ApiResponse(status, { user: loggedInUser, accessToken, refreshToken }, message));
+        .json(
+            new ApiResponse(
+                status,
+                { user: loggedInUser, accessToken, refreshToken },
+                message
+            )
+        );
 };
 
 // ================= REGISTER (OTP) =================
@@ -105,7 +122,10 @@ const registerUser = asyncHandler(async (req, res) => {
         password = req.body.password;
 
         if (!fullName || !email || !password) {
-            throw new ApiError(400, "fullName, email and password are required");
+            throw new ApiError(
+                400,
+                "fullName, email and password are required"
+            );
         }
         if (!isEmail(email)) throw new ApiError(400, "Invalid email address");
         assertPassword(password);
@@ -152,18 +172,30 @@ const registerUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, { ...otpInfo(email), username }, "Verification code sent to your email"));
+        .json(
+            new ApiResponse(
+                200,
+                { ...otpInfo(email), username },
+                "Verification code sent to your email"
+            )
+        );
 });
 
 // ধাপ ২: OTP ঠিক হলে account তৈরি + login
 const verifyRegisterOtp = asyncHandler(async (req, res) => {
     const email = normEmail(req.body.email);
-    if (!email || !req.body.otp) throw new ApiError(400, "email and otp are required");
+    if (!email || !req.body.otp)
+        throw new ApiError(400, "email and otp are required");
 
-    const doc = await verifyOtp({ email, purpose: OTP_PURPOSES.REGISTER, code: req.body.otp });
+    const doc = await verifyOtp({
+        email,
+        purpose: OTP_PURPOSES.REGISTER,
+        code: req.body.otp
+    });
     const { fullName, username, passwordHash, avatar } = doc.payload || {};
 
-    if (await User.exists({ email })) throw new ApiError(409, "User with this email already exists");
+    if (await User.exists({ email }))
+        throw new ApiError(409, "User with this email already exists");
 
     // এর মধ্যে কেউ username নিয়ে নিলে নতুন একটা দেওয়া হবে
     const finalUsername = (await User.exists({ username }))
@@ -184,18 +216,28 @@ const verifyRegisterOtp = asyncHandler(async (req, res) => {
         await user.save();
     } catch (error) {
         if (error.code === 11000) {
-            throw new ApiError(409, "User with this email or username already exists");
+            throw new ApiError(
+                409,
+                "User with this email or username already exists"
+            );
         }
         throw error;
     }
 
-    return finishLogin(req, res, user._id, "Account created and logged in successfully", 201);
+    return finishLogin(
+        req,
+        res,
+        user._id,
+        "Account created and logged in successfully",
+        201
+    );
 });
 
 // ================= LOGIN (শুধু password) =================
 
 const loginUser = asyncHandler(async (req, res) => {
-    const identifier = req.body.identifier ?? req.body.email ?? req.body.username;
+    const identifier =
+        req.body.identifier ?? req.body.email ?? req.body.username;
     const { password } = req.body;
 
     if (!identifier || !password) {
@@ -207,7 +249,10 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Invalid credentials");
     }
     if (user.isBlocked) {
-        throw new ApiError(403, "Your account has been blocked. Contact support.");
+        throw new ApiError(
+            403,
+            "Your account has been blocked. Contact support."
+        );
     }
 
     return finishLogin(req, res, user._id, "User logged In successfully");
@@ -222,7 +267,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
     if (user) {
         try {
-            await createAndSendOtp({ email, purpose: OTP_PURPOSES.FORGOT_PASSWORD });
+            await createAndSendOtp({
+                email,
+                purpose: OTP_PURPOSES.FORGOT_PASSWORD
+            });
         } catch (error) {
             // ৩০ সেকেন্ডের cooldown এর error চেপে যাওয়া হচ্ছে, যাতে email আছে কিনা বোঝা না যায়
             if (error.statusCode !== 429) throw error;
@@ -230,28 +278,31 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 
     // email থাকুক বা না থাকুক, একই উত্তর
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    email,
-                    resendAfterSeconds: OTP_RESEND_COOLDOWN_SECONDS,
-                    expiresInMinutes: OTP_EXPIRY_MINUTES
-                },
-                "If this email is registered, a reset code has been sent"
-            )
-        );
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                email,
+                resendAfterSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+                expiresInMinutes: OTP_EXPIRY_MINUTES
+            },
+            "If this email is registered, a reset code has been sent"
+        )
+    );
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
     const email = normEmail(req.body.email);
     const { otp, newPassword } = req.body;
-    if (!email || !otp) throw new ApiError(400, "email, otp and newPassword are required");
+    if (!email || !otp)
+        throw new ApiError(400, "email, otp and newPassword are required");
     assertPassword(newPassword);
 
-    await verifyOtp({ email, purpose: OTP_PURPOSES.FORGOT_PASSWORD, code: otp });
+    await verifyOtp({
+        email,
+        purpose: OTP_PURPOSES.FORGOT_PASSWORD,
+        code: otp
+    });
 
     const user = await User.findOne({ email });
     if (!user) throw new ApiError(400, "Invalid or expired code");
@@ -262,7 +313,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, "Password reset successfully. Please login with your new password"));
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Password reset successfully. Please login with your new password"
+            )
+        );
 });
 
 // ================= RESEND OTP (৩০ সেকেন্ড পর) =================
@@ -271,7 +328,10 @@ const resendOtpCode = asyncHandler(async (req, res) => {
     const { purpose } = req.body;
     const allowed = [OTP_PURPOSES.REGISTER, OTP_PURPOSES.FORGOT_PASSWORD];
     if (!allowed.includes(purpose)) {
-        throw new ApiError(400, `purpose must be one of: ${allowed.join(", ")}`);
+        throw new ApiError(
+            400,
+            `purpose must be one of: ${allowed.join(", ")}`
+        );
     }
 
     const email = normEmail(req.body.email);
@@ -279,12 +339,21 @@ const resendOtpCode = asyncHandler(async (req, res) => {
 
     const sent = await resendOtp({ email, purpose });
     if (!sent && purpose !== OTP_PURPOSES.FORGOT_PASSWORD) {
-        throw new ApiError(400, "No pending verification found. Please start again");
+        throw new ApiError(
+            400,
+            "No pending verification found. Please start again"
+        );
     }
 
     return res
         .status(200)
-        .json(new ApiResponse(200, { resendAfterSeconds: OTP_RESEND_COOLDOWN_SECONDS }, "If a request is pending, a new code has been sent"));
+        .json(
+            new ApiResponse(
+                200,
+                { resendAfterSeconds: OTP_RESEND_COOLDOWN_SECONDS },
+                "If a request is pending, a new code has been sent"
+            )
+        );
 });
 
 // ================= USERNAME =================
@@ -297,16 +366,21 @@ const checkUsername = asyncHandler(async (req, res) => {
         const username = normalizeUsername(req.query.username);
         data.username = username;
         data.valid = USERNAME_REGEX.test(username);
-        data.available = data.valid ? !(await User.exists({ username })) : false;
+        data.available = data.valid
+            ? !(await User.exists({ username }))
+            : false;
     }
     if (req.query.email !== undefined) {
         const email = normEmail(req.query.email);
         if (!isEmail(email)) throw new ApiError(400, "Invalid email address");
         data.suggested = await findFreeUsername(usernameFromEmail(email));
     }
-    if (!Object.keys(data).length) throw new ApiError(400, "Provide ?username= or ?email=");
+    if (!Object.keys(data).length)
+        throw new ApiError(400, "Provide ?username= or ?email=");
 
-    return res.status(200).json(new ApiResponse(200, data, "Username check done"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, data, "Username check done"));
 });
 
 // ================= বাকি আগের মতোই =================
@@ -326,29 +400,41 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const incommingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
 
     if (!incommingRefreshToken) {
         throw new ApiError(401, "Unauthorised Request");
     }
 
     try {
-        const decodedToken = jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const decodedToken = jwt.verify(
+            incommingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
         const user = await User.findById(decodedToken?._id);
 
         if (!user) throw new ApiError(401, "Invalid Refresh Token");
         if (incommingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used");
         }
-        if (user.isBlocked) throw new ApiError(401, "Your account has been blocked");
+        if (user.isBlocked)
+            throw new ApiError(401, "Your account has been blocked");
 
-        const { accessToken, refreshToken } = await genarateAccessAndRefreshTokens(user._id);
+        const { accessToken, refreshToken } =
+            await genarateAccessAndRefreshTokens(user._id);
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, cookieOptions)
             .cookie("refreshToken", refreshToken, cookieOptions)
-            .json(new ApiResponse(200, { accessToken, refreshToken }, "Access Token Refreshed Successfully"));
+            .json(
+                new ApiResponse(
+                    200,
+                    { accessToken, refreshToken },
+                    "Access Token Refreshed Successfully"
+                )
+            );
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid Refresh Token");
     }
@@ -368,15 +454,21 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     user.password = newPassword;
     await user.save({ validateBeforeSave: false });
 
-    return res.status(200).json(new ApiResponse(200, {}, "password changed successfully"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "password changed successfully"));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
     let user = req.user;
     if (user.role === "admin") {
-        user = await User.findById(user._id).select("-password -refreshToken +loginHistory");
+        user = await User.findById(user._id).select(
+            "-password -refreshToken +loginHistory"
+        );
     }
-    return res.status(200).json(new ApiResponse(200, user, "current user fetched Successfully"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "current user fetched Successfully"));
 });
 
 // fullName এবং/অথবা username বদলানো
@@ -398,25 +490,36 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
                 "Username must be 3-20 chars: lowercase letters, numbers, dot, underscore or dash"
             );
         }
-        if (uname !== req.user.username && (await User.exists({ username: uname, _id: { $ne: req.user._id } }))) {
+        if (
+            uname !== req.user.username &&
+            (await User.exists({ username: uname, _id: { $ne: req.user._id } }))
+        ) {
             throw new ApiError(409, "Username already taken");
         }
         update.username = uname;
     }
 
-    if (!Object.keys(update).length) throw new ApiError(400, "Nothing to update");
+    if (!Object.keys(update).length)
+        throw new ApiError(400, "Nothing to update");
 
     let user;
     try {
-        user = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true }).select(
-            "-password -refreshToken"
-        );
+        user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $set: update },
+            { new: true }
+        ).select("-password -refreshToken");
     } catch (error) {
-        if (error.code === 11000) throw new ApiError(409, "Username already taken");
+        if (error.code === 11000)
+            throw new ApiError(409, "Username already taken");
         throw error;
     }
 
-    return res.status(200).json(new ApiResponse(200, user, "Account Details Update Successfully"));
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Account Details Update Successfully")
+        );
 });
 
 const updateAvatar = asyncHandler(async (req, res) => {
@@ -443,7 +546,9 @@ const updateAvatar = asyncHandler(async (req, res) => {
         { new: true }
     ).select("-password -refreshToken");
 
-    return res.status(200).json(new ApiResponse(200, updatedUser, "Avatar updated successfully"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedUser, "Avatar updated successfully"));
 });
 
 const getUserDashboardStats = asyncHandler(async (req, res) => {
@@ -481,7 +586,9 @@ const getUserDashboardStats = asyncHandler(async (req, res) => {
                 monthlyEmailLimit: 1,
                 totalApiKeys: 1,
                 totalEmailsSent: 1,
-                emailsRemaining: { $subtract: ["$monthlyEmailLimit", "$totalEmailsSent"] },
+                emailsRemaining: {
+                    $subtract: ["$monthlyEmailLimit", "$totalEmailsSent"]
+                },
                 apiKeysList: 1,
                 allSubmissions: 1
             }
@@ -494,7 +601,13 @@ const getUserDashboardStats = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, dashboardData[0], "User dashboard stats fetched successfully"));
+        .json(
+            new ApiResponse(
+                200,
+                dashboardData[0],
+                "User dashboard stats fetched successfully"
+            )
+        );
 });
 
 export {
