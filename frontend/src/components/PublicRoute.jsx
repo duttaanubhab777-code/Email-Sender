@@ -2,10 +2,10 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Splash from "./ui/Splash";
 
-// শুধু লগআউট ইউজারদের পেজ (login/register/forgot)
+// শুধু লগআউট ইউজারদের পেজ (login/register/forgot password)
 export default function PublicRoute() {
     const { user, loading } = useAuth();
     if (loading) return <Splash />;
-    if (user) return <Navigate to="/dashboard" replace />;
+    if (user) return <Navigate to="/users/dashboard" replace />;
     return <Outlet />;
 }

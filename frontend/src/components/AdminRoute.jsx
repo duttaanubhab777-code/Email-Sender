@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-// UI-র পাহারা। আসল নিরাপত্তা ব্যাকএন্ডের verifyAdmin
+// UI-র পাহারা। আসল নিরাপত্তা ব্যাকএন্ডের verifyAdmin / verifySuperAdmin
 export default function AdminRoute() {
     const { user } = useAuth();
     if (user?.role !== "admin")

@@ -268,12 +268,13 @@ export const killVerifyOtp = (sessionId, otp) =>
         method: "POST",
         body: { sessionId, otp }
     });
-export const killExecute = (sessionId, killPassword) =>
+
+// answer "yes" ছাড়া কিছু দিলে ব্যাকএন্ড session বাতিল করে দেয় (Cancel বাটনের জন্য)
+export const killExecute = (sessionId, killPassword, answer = "yes") =>
     request("/kill-switch/execute", {
         method: "POST",
-        body: { sessionId, answer: "yes", killPassword }
+        body: { sessionId, answer, killPassword }
     });
 
 // ---------- System (public) ----------
 export const getSystemStatus = signal => request("/system/status", { signal });
-
