@@ -1,23 +1,11 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Spinner from "./Spinner";
-import Backdrop from "./Backdrop";
-import ThemeToggle from "./ThemeToggle";
+import Splash from "./ui/Splash";
 
+// শুধু লগআউট ইউজারদের পেজ (login/register/forgot)
 export default function PublicRoute() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <Spinner />;
-
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return (
-    <>
-      <Backdrop />
-      <div className="theme-float"><ThemeToggle /></div>
-      <Outlet />
-    </>
-  );
+    const { user, loading } = useAuth();
+    if (loading) return <Splash />;
+    if (user) return <Navigate to="/users/dashboard" replace />;
+    return <Outlet />;
 }

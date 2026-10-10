@@ -1,15 +1,20 @@
-export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+export const BASE_URL =
+    import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+
 export class ApiError extends Error {
     constructor(message, status, data = null) {
         super(message);
-        this.status = status; // 401, 404 ...
-        this.data = data; // ব্যা কএন্ডে র পুরো JSON (যদি থা কে )
+        this.name = "ApiError";
+        this.status = status; // 401, 404, 429 ...
+        this.data = data; // ব্যাকএন্ডের পুরো JSON
+        this.errors = data?.errors ?? [];
+        this.retryAfter = data?.errors?.[0]?.retryAfter ?? null; // 429 হলে কত সেকেন্ড অপেক্ষা
     }
 }
 
 async function parseJson(res) {
     const type = res.headers.get("content-type") || "";
-    if (!type.includes("application/json")) return null; // HTML হলে null
+    if (!type.includes("application/json")) return null;
     try {
         return await res.json();
     } catch {
@@ -17,58 +22,17 @@ async function parseJson(res) {
     }
 }
 
-export async function request(
-    path,
-    { method = "GET", body, headers = {}, signal, retry = true } = {}
-) {
-    const options = {
-        method,
-        credentials: "include", // সবসময়: কুকি যা ওয়া -আসা
-        headers: { ...headers },
-        signal // বাতি ল করার জন্য (অধ্যা য় ৯)
-    };
-    if (body !== undefined) {
-        if (body instanceof FormData) {
-            options.body = body; // ⚠️ Content-Type নি জে দে বে না !
-        } else {
-            options.headers["Content-Type"] = "application/json";
-            options.body = JSON.stringify(body);
-        }
-    }
-    let res;
-    try {
-        res = await fetch(`${BASE_URL}${path}`, options);
-    } catch (err) {
-        if (err.name === "AbortError") throw err; // ইচ্ছা কৃত বাতি ল — চুপচা প ছা ড়ো
-        throw new ApiError("Unable to connect to the server", 0);
-    }
-    // ৪০১ হলে একবার টো কে ন রি ফ্রে শ করে আবার চে ষ্টা (পরে র ধা প দে খো )
-    if (res.status === 401 && retry && canRefresh(path)) {
-        try {
-            await refreshSession();
-            return request(path, {
-                method,
-                body,
-                headers,
-                signal,
-                retry: false
-            });
-        } catch {
-            /* রি ফ্রে শও ফে ল — নি চে আসল 401 এররই দে খা নো হবে */
-        }
-    }
-    const json = await parseJson(res);
-    if (!res.ok) {
-        throw new ApiError(
-            json?.message || `Something went wrong (${res.status})`,
-            res.status,
-            json
-        );
-    }
-    return json?.data; // ApiResponse-এর data অং শটা ই ফে রত
-}
+// এই path গুলোতে 401 মানে "ভুল পাসওয়ার্ড" — refresh করে আবার পাঠালে ভুল-গণনা দুইবার হয়ে যাবে
+const NO_REFRESH = [
+    "/users/login",
+    "/users/refresh-token",
+    "/users/logout",
+    "/kill-switch/",
+    "/approvals/"
+];
+const canRefresh = path => !NO_REFRESH.some(p => path.startsWith(p));
 
-let refreshing = null; // একসা থে অনে কগুলো 401 এলে রি ফ্রে শ যে ন একবারই হয়
+let refreshing = null;
 function refreshSession() {
     if (!refreshing) {
         refreshing = fetch(`${BASE_URL}/users/refresh-token`, {
@@ -84,25 +48,101 @@ function refreshSession() {
     }
     return refreshing;
 }
-// লগইন/রি ফ্রে শ নি জে ই 401 দি লে রি ফ্রে শ চে ষ্টা করা অর্থহী ন (অসী ম লুপ হবে )
-const canRefresh = path =>
-    !path.startsWith("/users/login") &&
-    !path.startsWith("/users/refresh-token");
 
-// ---------- Auth ----------
-export const registerUser = formData =>
+export async function request(
+    path,
+    { method = "GET", body, headers = {}, signal, retry = true } = {}
+) {
+    const options = {
+        method,
+        credentials: "include",
+        headers: { ...headers },
+        signal
+    };
+    if (body !== undefined) {
+        if (body instanceof FormData) {
+            options.body = body; // Content-Type browser নিজে বসাবে
+        } else {
+            options.headers["Content-Type"] = "application/json";
+            options.body = JSON.stringify(body);
+        }
+    }
+
+    let res;
+    try {
+        res = await fetch(`${BASE_URL}${path}`, options);
+    } catch (err) {
+        if (err.name === "AbortError") throw err;
+        throw new ApiError(
+            "Unable to reach the server. Check your connection.",
+            0
+        );
+    }
+
+    if (res.status === 401 && retry && canRefresh(path)) {
+        try {
+            await refreshSession();
+            return request(path, {
+                method,
+                body,
+                headers,
+                signal,
+                retry: false
+            });
+        } catch {
+            /* refresh ব্যর্থ — নিচে আসল 401 ই দেখানো হবে */
+        }
+    }
+
+    const json = await parseJson(res);
+
+    // Kill switch চালু থাকলে সব route 503 দেয় — পুরো app কে status পেজে পাঠানো
+    if (res.status === 503 && json?.data?.killSwitch) {
+        window.dispatchEvent(
+            new CustomEvent("es:kill", { detail: json.data.killSwitch })
+        );
+    }
+
+    if (!res.ok) {
+        throw new ApiError(
+            json?.message || `Something went wrong (${res.status})`,
+            res.status,
+            json
+        );
+    }
+    return json?.data;
+}
+
+const withApproval = approvalId =>
+    approvalId ? { "x-approval-id": approvalId } : {};
+
+// ---------- Auth (/users) ----------
+export const registerStart = formData =>
     request("/users/register", { method: "POST", body: formData });
-export const loginUser = (
-    credentials // { email|username, password }
-) => request("/users/login", { method: "POST", body: credentials });
+export const registerVerify = (email, otp) =>
+    request("/users/register/verify", { method: "POST", body: { email, otp } });
+export const loginUser = (identifier, password) =>
+    request("/users/login", { method: "POST", body: { identifier, password } });
 export const logoutUser = () => request("/users/logout", { method: "POST" });
+export const forgotPassword = email =>
+    request("/users/forgot-password", { method: "POST", body: { email } });
+export const resetPassword = ({ email, otp, newPassword }) =>
+    request("/users/forgot-password/reset", {
+        method: "POST",
+        body: { email, otp, newPassword }
+    });
+export const resendOtp = (purpose, email) =>
+    request("/users/otp/resend", { method: "POST", body: { purpose, email } });
+export const checkUsername = (params, signal) =>
+    request(`/users/check-username?${new URLSearchParams(params)}`, { signal });
+
+// ---------- Account ----------
 export const getCurrentUser = () => request("/users/current-user");
-// ---------- Profile ----------
-export const updateAccount = fullName =>
-    request("/users/update-account", { method: "PATCH", body: { fullName } });
+export const updateAccount = body =>
+    request("/users/update-account", { method: "PATCH", body });
 export const updateAvatar = file => {
     const fd = new FormData();
-    fd.append("avatar", file); // না মটা ব্যা কএন্ডে র upload.single("avatar")-এর সা থে হুবহু মি লতে হবে
+    fd.append("avatar", file); // ব্যাকএন্ডের upload.single("avatar") এর সাথে মিলতে হবে
     return request("/users/avatar", { method: "PATCH", body: fd });
 };
 export const changePassword = (oldPassword, newPassword) =>
@@ -110,25 +150,219 @@ export const changePassword = (oldPassword, newPassword) =>
         method: "POST",
         body: { oldPassword, newPassword }
     });
-// ---------- Dashboard & API Keys ----------
 export const getDashboard = signal => request("/users/dashboard", { signal });
+
+// ---------- API keys ----------
+export const getApiKeys = signal => request("/apiKeys/all", { signal });
 export const createApiKey = name =>
     request("/apiKeys/create", { method: "POST", body: { name } });
 export const deleteApiKey = keyId =>
     request(`/apiKeys/delete/${keyId}`, { method: "DELETE" });
-// ---------- Mail (পা বলি ক এন্ডপয়ে ন্ট, API Key দি য়ে ) ----------
-export const sendMail = (apiKey, payload) =>
-    request("/mail/send", {
-        method: "POST",
-        body: payload,
-        headers: { "x-api-key": apiKey }
-    });
 
-// ---------- Admin (ব্যাকএন্ডে এই এন্ডপয়েন্টগুলো যোগ করতে হবে) ----------
+// ---------- Mail: Postman-এর মতো — সময়, সাইজ, status সহ ফেরত দেয় ----------
+export async function sendMailRaw(apiKey, payload) {
+    const started = performance.now();
+    let res;
+    try {
+        res = await fetch(`${BASE_URL}/mail/send`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify(payload)
+        });
+    } catch {
+        return {
+            ok: false,
+            status: 0,
+            statusText: "Network error",
+            ms: Math.round(performance.now() - started),
+            bytes: 0,
+            body: null,
+            raw: ""
+        };
+    }
+    const raw = await res.text();
+    const ms = Math.round(performance.now() - started);
+    let body = null;
+    try {
+        body = JSON.parse(raw);
+    } catch {
+        /* HTML বা খালি */
+    }
+    return {
+        ok: res.ok,
+        status: res.status,
+        statusText: res.statusText,
+        ms,
+        bytes: new Blob([raw]).size,
+        body,
+        raw
+    };
+}
+
+// ---------- Admin ----------
 export const getAdminStats = signal => request("/admin/stats", { signal });
 export const getAdminUsers = signal => request("/admin/users", { signal });
-export const toggleBlockUser = (userId, isBlocked) =>
-    request(`/admin/users/${userId}/block`, {
+export const setUserBlocked = (id, isBlocked, approvalId) =>
+    request(`/admin/users/${id}/block`, {
         method: "PATCH",
-        body: { isBlocked }
+        body: { isBlocked },
+        headers: withApproval(approvalId)
     });
+export const deleteUserById = (id, approvalId) =>
+    request(`/admin/users/${id}`, {
+        method: "DELETE",
+        headers: withApproval(approvalId)
+    });
+export const makeAdmin = (targetEmail, approvalId) =>
+    request("/admin/make-admin", {
+        method: "PUT",
+        body: { targetEmail },
+        headers: withApproval(approvalId)
+    });
+export const removeAdmin = (targetEmail, approvalId) =>
+    request("/admin/remove-admin", {
+        method: "PUT",
+        body: { targetEmail },
+        headers: withApproval(approvalId)
+    });
+export const createAdmin = (body, approvalId) =>
+    request("/admin/create-admin", {
+        method: "POST",
+        body,
+        headers: withApproval(approvalId)
+    });
+
+// ---------- Approvals ----------
+export const requestApproval = body =>
+    request("/approvals", { method: "POST", body });
+export const listApprovals = (status, signal) =>
+    request(`/approvals${status ? `?status=${status}` : ""}`, { signal });
+export const approveApproval = (id, password) =>
+    request(`/approvals/${id}/approve`, {
+        method: "PATCH",
+        body: { password }
+    });
+export const denyApproval = (id, note) =>
+    request(`/approvals/${id}/deny`, { method: "PATCH", body: { note } });
+
+// ---------- Kill switch ----------
+export const getKillOptions = () => request("/kill-switch/options");
+export const killStart = ({ password, targets }, approvalId) =>
+    request("/kill-switch/start", {
+        method: "POST",
+        body: { password, targets },
+        headers: withApproval(approvalId)
+    });
+export const killConfirm = (sessionId, answer) =>
+    request("/kill-switch/confirm", {
+        method: "POST",
+        body: { sessionId, answer }
+    });
+export const killResendOtp = sessionId =>
+    request("/kill-switch/resend-otp", { method: "POST", body: { sessionId } });
+export const killVerifyOtp = (sessionId, otp) =>
+    request("/kill-switch/verify-otp", {
+        method: "POST",
+        body: { sessionId, otp }
+    });
+export const killExecute = (sessionId, killPassword) =>
+    request("/kill-switch/execute", {
+        method: "POST",
+        body: { sessionId, answer: "yes", killPassword }
+    });
+
+// ---------- System (public) ----------
+export const getSystemStatus = signal => request("/system/status", { signal });
+EOF;
+cat > (lib / format.js) << "EOF";
+const dateFmt = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+});
+const timeFmt = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+});
+
+export const fmtDate = d => (d ? dateFmt.format(new Date(d)) : "—");
+export const fmtDateTime = d =>
+    d ? `${dateFmt.format(new Date(d))}, ${timeFmt.format(new Date(d))}` : "—";
+export const fmtNum = n => Number(n || 0).toLocaleString("en-US");
+
+export function timeAgo(d) {
+    if (!d) return "—";
+    const s = Math.max(
+        0,
+        Math.floor((Date.now() - new Date(d).getTime()) / 1000)
+    );
+    if (s < 45) return "just now";
+    if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
+    if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+    if (s < 86400 * 30) return `${Math.round(s / 86400)} d ago`;
+    return fmtDate(d);
+}
+
+export function fmtBytes(n) {
+    if (n < 1024) return `${n} B`;
+    return `${(n / 1024).toFixed(1)} KB`;
+}
+
+export const maskKey = k =>
+    k && k.length > 16
+        ? `${k.slice(0, 14)}${"•".repeat(10)}${k.slice(-4)}`
+        : k || "";
+
+// ব্যাকএন্ডের usernameFromEmail এর মতো: @ এর আগের অংশ, শুধু a-z 0-9 . _ -, সর্বোচ্চ ১৬
+export function usernameFromEmail(email) {
+    const local = String(email || "")
+        .split("@")[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]/g, "")
+        .slice(0, 16);
+    return local;
+}
+export const USERNAME_RE = /^[a-z0-9._-]{3,20}$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function passwordScore(pw) {
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+    if (/\d/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 14) s++;
+    return pw ? Math.max(1, s) : 0;
+}
+
+export const roleOf = u =>
+    u?.isSuperAdmin ? "Super Admin" : u?.role === "admin" ? "Admin" : "User";
+
+export const mmss = totalSeconds => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    return [Math.floor(s / 60), s % 60].map(v => String(v).padStart(2, "0"));
+};
+
+export async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try {
+            ok = document.execCommand("copy");
+        } catch {
+            ok = false;
+        }
+        ta.remove();
+        return ok;
+    }
+}

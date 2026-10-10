@@ -1,161 +1,309 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "../../services/api";
+import { checkUsername, registerStart } from "../../services/api";
 import { useToast } from "../../components/Toast";
-import { LogoFull } from "../../components/Logo";
 import Icon from "../../components/Icons";
-import AuthHero from "./AuthHero";
-import "../../styles/auth.css";
+import PasswordField from "../../components/ui/PasswordField";
+import { Callout } from "../../components/ui/Bits";
+import {
+    EMAIL_RE,
+    USERNAME_RE,
+    passwordScore,
+    usernameFromEmail
+} from "../../lib/format";
+import { savePending } from "../../lib/pending";
+import AuthLayout from "./AuthLayout";
 
-// পাসওয়ার্ডের জোর মাপা (০–4)
-function strength(pw) {
-  let s = 0;
-  if (pw.length >= 8) s++;
-  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
-  if (/\d/.test(pw)) s++;
-  if (/[^A-Za-z0-9]/.test(pw)) s++;
-  return s;
-}
-const LABELS = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+const STRENGTH = ["", "Weak", "Fair", "Good", "Strong"];
 
 export default function Register() {
-  const navigate = useNavigate();
-  const toast = useToast();
+    const toast = useToast();
+    const navigate = useNavigate();
+    const fileRef = useRef(null);
 
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [avatar, setAvatar] = useState(null);
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
+    const [edited, setEdited] = useState(false); // user নিজে username বদলালে auto-fill বন্ধ
+    const [password, setPassword] = useState("");
+    const [avatar, setAvatar] = useState(null);
+    const [preview, setPreview] = useState("");
+    const [uStatus, setUStatus] = useState("idle"); // idle | checking | ok | taken | invalid
+    const [error, setError] = useState("");
+    const [busy, setBusy] = useState(false);
 
-  const [error, setError] = useState("");
-  const [shake, setShake] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+    // email লিখলে @ এর আগের অংশ username এ বসে (instant), তারপর server থেকে ফাঁকা নাম এনে ঠিক করে
+    useEffect(() => {
+        if (edited) return;
+        if (!EMAIL_RE.test(email)) {
+            setUsername(usernameFromEmail(email));
+            setUStatus("idle");
+            return;
+        }
+        setUsername(usernameFromEmail(email));
+        const ctrl = new AbortController();
+        const t = setTimeout(() => {
+            setUStatus("checking");
+            checkUsername({ email }, ctrl.signal)
+                .then(d => {
+                    setUsername(d.suggested);
+                    setUStatus("ok");
+                })
+                .catch(err => {
+                    if (err.name !== "AbortError") setUStatus("idle");
+                });
+        }, 450);
+        return () => {
+            clearTimeout(t);
+            ctrl.abort();
+        };
+    }, [email, edited]);
 
-  // ছবির প্রিভিউ (ব্রাউজারের মেমোরির URL — আনমাউন্টে মুছে ফেলতে হয়)
-  const preview = useMemo(() => (avatar ? URL.createObjectURL(avatar) : ""), [avatar]);
-  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
+    // username নিজে লিখলে availability check
+    useEffect(() => {
+        if (!edited) return;
+        if (!username) {
+            setUStatus("idle");
+            return;
+        }
+        if (!USERNAME_RE.test(username)) {
+            setUStatus("invalid");
+            return;
+        }
+        const ctrl = new AbortController();
+        setUStatus("checking");
+        const t = setTimeout(() => {
+            checkUsername({ username }, ctrl.signal)
+                .then(d => setUStatus(d.available ? "ok" : "taken"))
+                .catch(err => {
+                    if (err.name !== "AbortError") setUStatus("idle");
+                });
+        }, 450);
+        return () => {
+            clearTimeout(t);
+            ctrl.abort();
+        };
+    }, [username, edited]);
 
-  const score = strength(password);
+    useEffect(
+        () => () => {
+            if (preview) URL.revokeObjectURL(preview);
+        },
+        [preview]
+    );
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("fullName", fullName);
-      formData.append("username", username.toLowerCase());
-      formData.append("email", email.toLowerCase());
-      formData.append("password", password);
-      if (avatar) formData.append("avatar", avatar);
-
-      await registerUser(formData);
-
-      toast.success("Account created! Please sign in.");
-      navigate("/login", { replace: true });
-    } catch (err) {
-      setError(err.message);
-      setShake(s => s + 1);
-    } finally {
-      setSubmitting(false);
+    function pickFile(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        if (!f.type.startsWith("image/"))
+            return toast.error("Please choose an image file");
+        if (f.size > 5 * 1024 * 1024)
+            return toast.error("Image must be 5 MB or smaller");
+        setAvatar(f);
+        setPreview(URL.createObjectURL(f));
     }
-  }
 
-  return (
-    <div className="auth-page">
-      <AuthHero />
+    const score = passwordScore(password);
+    const canSubmit =
+        fullName.trim() &&
+        EMAIL_RE.test(email) &&
+        password.length >= 8 &&
+        uStatus !== "taken" &&
+        uStatus !== "invalid" &&
+        uStatus !== "checking";
 
-      <section className="auth-side">
-        <div key={shake} className={`card auth-card reveal ${shake ? "shake" : ""}`}>
-          <div className="auth-mobile-brand"><LogoFull width={210} className="auth-logo-full" /></div>
-          <h2>Create your account</h2>
-          <p className="sub">Get started in under a minute.</p>
+    async function submit(e) {
+        e.preventDefault();
+        setError("");
+        setBusy(true);
+        try {
+            const fd = new FormData();
+            fd.append("fullName", fullName.trim());
+            fd.append("email", email.trim().toLowerCase());
+            if (username) fd.append("username", username);
+            fd.append("password", password);
+            if (avatar) fd.append("avatar", avatar);
+            const data = await registerStart(fd);
+            savePending({
+                purpose: "register",
+                email: data.email,
+                maskedEmail: data.maskedEmail,
+                resendUntil: Date.now() + data.resendAfterSeconds * 1000,
+                expiresInMinutes: data.expiresInMinutes
+            });
+            toast.success("Verification code sent to your email");
+            navigate("/users/register/verify", { replace: true });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBusy(false);
+        }
+    }
 
-          {error && (
-            <div className="alert alert-error" role="alert">
-              <Icon name="alert" size={18} /> <span>{error}</span>
-            </div>
-          )}
+    const uHelp = {
+        checking: <span className="help">Checking availability…</span>,
+        ok: <span className="help ok">@{username} is available</span>,
+        taken: <span className="help err">That username is already taken</span>,
+        invalid: (
+            <span className="help err">
+                3–20 characters: lowercase letters, numbers, dot, underscore or
+                dash
+            </span>
+        ),
+        idle: (
+            <span className="help">
+                {edited ? "" : "Filled from your email. You can change it."}
+            </span>
+        )
+    }[uStatus];
 
-          <form onSubmit={handleSubmit} className="form">
-            <label className="avatar-pick">
-              <span className={`avatar-pick-circle ${preview ? "has" : ""}`}>
-                {preview ? <img src={preview} alt="Preview" /> : <Icon name="camera" size={26} />}
-              </span>
-              <span className="avatar-pick-text">
-                <b>Profile picture</b>
-                <small>{avatar ? avatar.name : "Optional — tap to choose"}</small>
-              </span>
-              <input type="file" accept="image/*" hidden onChange={e => setAvatar(e.target.files[0] || null)} />
-            </label>
+    return (
+        <AuthLayout>
+            <h1>Create your account</h1>
+            <p className="sub">
+                We'll email a 6-digit code to confirm it's you.
+            </p>
+            <form className="form" onSubmit={submit}>
+                {error && (
+                    <Callout tone="danger" icon="alert">
+                        {error}
+                    </Callout>
+                )}
 
-            <label className="field">
-              <span className="field-label">Full name</span>
-              <span className="field-box">
-                <Icon name="user" size={18} />
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" required />
-              </span>
-            </label>
+                <div className="avatar-pick">
+                    <div className="preview">
+                        {preview ? (
+                            <img src={preview} alt="Selected avatar" />
+                        ) : (
+                            <Icon name="camera" size={22} />
+                        )}
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => fileRef.current?.click()}
+                        >
+                            {preview ? "Change photo" : "Add a photo"}
+                        </button>
+                        <div className="help" style={{ marginTop: 4 }}>
+                            Optional · JPG or PNG up to 5 MB
+                        </div>
+                        <input
+                            ref={fileRef}
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={pickFile}
+                        />
+                    </div>
+                </div>
 
-            <label className="field">
-              <span className="field-label">Username</span>
-              <span className="field-box">
-                <b className="at">@</b>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
-                  autoComplete="username"
-                  required
-                />
-              </span>
-              <small className="hint">Lowercase letters and numbers only</small>
-            </label>
+                <div className="field">
+                    <label className="label" htmlFor="fullName">
+                        Full name
+                    </label>
+                    <input
+                        id="fullName"
+                        className="input"
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        autoComplete="name"
+                        placeholder="Anubhab Dutta"
+                        required
+                    />
+                </div>
+                <div className="field">
+                    <label className="label" htmlFor="email">
+                        Email
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        className="input"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        required
+                    />
+                </div>
+                <div className="field">
+                    <label className="label" htmlFor="username">
+                        Username
+                    </label>
+                    <div className="input-wrap">
+                        <input
+                            id="username"
+                            className={`input ${uStatus === "taken" || uStatus === "invalid" ? "is-error" : uStatus === "ok" ? "is-ok" : ""}`}
+                            value={username}
+                            onChange={e => {
+                                setEdited(true);
+                                setUsername(
+                                    e.target.value
+                                        .toLowerCase()
+                                        .replace(/\s/g, "")
+                                );
+                            }}
+                            autoComplete="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            placeholder="rafi.ahmed"
+                        />
+                        <span className="adorn static">
+                            {uStatus === "checking" ? (
+                                <span className="spin" />
+                            ) : uStatus === "ok" ? (
+                                <Icon name="checkCircle" size={17} />
+                            ) : uStatus === "taken" || uStatus === "invalid" ? (
+                                <Icon name="xCircle" size={17} />
+                            ) : null}
+                        </span>
+                    </div>
+                    {uHelp}
+                </div>
+                <div className="field">
+                    <PasswordField
+                        id="password"
+                        label="Password"
+                        value={password}
+                        onChange={setPassword}
+                        autoComplete="new-password"
+                        placeholder="At least 8 characters"
+                    />
+                    {password && (
+                        <>
+                            <div
+                                className={`strength s${score}`}
+                                aria-hidden="true"
+                            >
+                                <i />
+                                <i />
+                                <i />
+                                <i />
+                            </div>
+                            <span className="help">
+                                Strength: <b>{STRENGTH[score]}</b>
+                                {password.length < 8 &&
+                                    " · use at least 8 characters"}
+                            </span>
+                        </>
+                    )}
+                </div>
 
-            <label className="field">
-              <span className="field-label">Email</span>
-              <span className="field-box">
-                <Icon name="mail" size={18} />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} autoComplete="email" required />
-              </span>
-            </label>
-
-            <label className="field">
-              <span className="field-label">Password</span>
-              <span className="field-box">
-                <Icon name="lock" size={18} />
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                />
-                <button type="button" className="eye" onClick={() => setShowPw(v => !v)} aria-label="Show or hide password">
-                  <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
+                <button
+                    className="btn btn-primary btn-lg btn-block"
+                    disabled={busy || !canSubmit}
+                >
+                    {busy ? <span className="spin" /> : "Continue"}
                 </button>
-              </span>
-              {password && (
-                <span className="meter" data-score={score}>
-                  <i /><i /><i /><i />
-                  <em>{LABELS[score]}</em>
-                </span>
-              )}
-            </label>
-
-            <button type="submit" disabled={submitting} className="btn btn-primary btn-block">
-              {submitting ? <><span className="spin" /> Creating account...</> : <>Create account <Icon name="spark" size={17} className="fly" /></>}
-            </button>
-          </form>
-
-          <p className="switch-text">
-            Already have an account? <Link to="/login">Sign in</Link>
-          </p>
-        </div>
-      </section>
-    </div>
-  );
+            </form>
+            <p className="auth-foot">
+                Already have an account?{" "}
+                <Link to="/users/login" className="link">
+                    Sign in
+                </Link>
+            </p>
+        </AuthLayout>
+    );
 }

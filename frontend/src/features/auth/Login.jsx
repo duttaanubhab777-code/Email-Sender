@@ -2,110 +2,91 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../components/Toast";
-import { LogoFull } from "../../components/Logo";
-import Icon from "../../components/Icons";
-import AuthHero from "./AuthHero";
-import "../../styles/auth.css";
+import PasswordField from "../../components/ui/PasswordField";
+import { Callout } from "../../components/ui/Bits";
+import AuthLayout from "./AuthLayout";
 
 export default function Login() {
-  const { login } = useAuth();
-  const toast = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
+    const { login } = useAuth();
+    const toast = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const redirectTo = location.state?.from?.pathname || "/users/dashboard";
 
-  // পাহারাদার থেকে আসলে আগের পেজের ঠিকানা মনে রাখা
-  const redirectTo = location.state?.from?.pathname || "/dashboard";
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [busy, setBusy] = useState(false);
 
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState("");
-  const [shake, setShake] = useState(0); // এরর এলে কার্ড ঝাঁকানোর জন্য
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
-
-    try {
-      const id = identifier.trim();
-      // @ থাকলে ইমেইল, না থাকলে ইউজারনেম
-      const payload = id.includes("@")
-        ? { email: id.toLowerCase(), password }
-        : { username: id.toLowerCase(), password };
-
-      const u = await login(payload);
-      toast.success(`Welcome back, ${u.fullName}!`);
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
-      setError(err.message);
-      setShake(s => s + 1);
-    } finally {
-      setSubmitting(false);
+    async function submit(e) {
+        e.preventDefault();
+        setError("");
+        setBusy(true);
+        try {
+            const u = await login(identifier.trim().toLowerCase(), password);
+            toast.success(`Signed in as ${u.fullName}`);
+            navigate(redirectTo, { replace: true });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBusy(false);
+        }
     }
-  }
 
-  return (
-    <div className="auth-page">
-      <AuthHero />
-
-      <section className="auth-side">
-        <div key={shake} className={`card auth-card reveal ${shake ? "shake" : ""}`}>
-          <div className="auth-mobile-brand"><LogoFull width={210} className="auth-logo-full" /></div>
-          <h2>Welcome back</h2>
-          <p className="sub">Sign in to manage your API keys.</p>
-
-          {error && (
-            <div className="alert alert-error" role="alert">
-              <Icon name="alert" size={18} /> <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="form">
-            <label className="field">
-              <span className="field-label">Email or username</span>
-              <span className="field-box">
-                <Icon name="user" size={18} />
-                <input
-                  type="text"
-                  value={identifier}
-                  onChange={e => setIdentifier(e.target.value.toLowerCase())}
-                  placeholder="you@example.com"
-                  autoComplete="username"
-                  required
+    return (
+        <AuthLayout>
+            <h1>Sign in</h1>
+            <p className="sub">
+                Use your email or username to open your dashboard.
+            </p>
+            <form className="form" onSubmit={submit}>
+                {error && (
+                    <Callout tone="danger" icon="alert">
+                        {error}
+                    </Callout>
+                )}
+                <div className="field">
+                    <label className="label" htmlFor="identifier">
+                        Email or username
+                    </label>
+                    <input
+                        id="identifier"
+                        className="input"
+                        value={identifier}
+                        onChange={e => setIdentifier(e.target.value)}
+                        autoComplete="username"
+                        placeholder="you@example.com"
+                        autoFocus
+                        required
+                    />
+                </div>
+                <PasswordField
+                    id="password"
+                    value={password}
+                    onChange={setPassword}
+                    right={
+                        <Link
+                            to="/users/forgot-password"
+                            className="link"
+                            style={{ fontWeight: 500, fontSize: 13 }}
+                        >
+                            Forgot password?
+                        </Link>
+                    }
                 />
-              </span>
-            </label>
-
-            <label className="field">
-              <span className="field-label">Password</span>
-              <span className="field-box">
-                <Icon name="lock" size={18} />
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  required
-                />
-                <button type="button" className="eye" onClick={() => setShowPw(v => !v)} aria-label="Show or hide password">
-                  <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
+                <button
+                    className="btn btn-primary btn-lg btn-block"
+                    disabled={busy || !identifier || !password}
+                >
+                    {busy ? <span className="spin" /> : "Sign in"}
                 </button>
-              </span>
-            </label>
-
-            <button type="submit" disabled={submitting} className="btn btn-primary btn-block">
-              {submitting ? <><span className="spin" /> Signing in...</> : <>Sign in <Icon name="send" size={17} className="fly" /></>}
-            </button>
-          </form>
-
-          <p className="switch-text">
-            Don't have an account? <Link to="/register">Create one</Link>
-          </p>
-        </div>
-      </section>
-    </div>
-  );
+            </form>
+            <p className="auth-foot">
+                New to Email Sender?{" "}
+                <Link to="/users/register" className="link">
+                    Create an account
+                </Link>
+            </p>
+        </AuthLayout>
+    );
 }
