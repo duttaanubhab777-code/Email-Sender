@@ -6,6 +6,6 @@ import Splash from "./ui/Splash";
 export default function PublicRoute() {
     const { user, loading } = useAuth();
     if (loading) return <Splash />;
-    if (user) return <Navigate to="/users/dashboard" replace />;
+    if (user) return <Navigate to="/dashboard" replace />;
     return <Outlet />;
 }
