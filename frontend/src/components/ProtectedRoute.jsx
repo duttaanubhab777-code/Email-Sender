@@ -9,7 +9,7 @@ export default function ProtectedRoute() {
     if (!user)
         return (
             <Navigate
-                to="/users/login"
+                to="/login"
                 replace
                 state={justLoggedOut ? null : { from: location }}
             />
