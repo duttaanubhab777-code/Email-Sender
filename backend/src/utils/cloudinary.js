@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-
 import fs from "fs";
 
 cloudinary.config({
@@ -8,36 +7,59 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+const removeLocalFile = localFilePath => {
+    try {
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
+    } catch {
+        /* ignore */
+    }
+};
+
 const uploadOnCloudinary = async localFilePath => {
     try {
         if (!localFilePath) return null;
-        // upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         });
-        // file has uploaded successfully
-        //console.log("file is uploaded on cloudinary", response.url);
-        fs.unlinkSync(localFilePath);
+        removeLocalFile(localFilePath);
         return response;
     } catch (error) {
-        fs.unlinkSync(localFilePath);
-        // remove the locally saved temporary file as the upload operation got failed
+        removeLocalFile(localFilePath);
         return null;
     }
+};
 
-  const deleteFromCloudinary = async (publicId) => {
+// Cloudinary URL থেকে publicId বের করা (folder/version থাকলেও কাজ করে)
+const publicIdFromUrl = url => {
+    try {
+        const rest = String(url).split("/upload/")[1];
+        if (!rest) return null;
+        return rest
+            .split("?")[0]
+            .replace(/^(?:.*?\/)?v\d+\//, "")
+            .replace(/\.[^./]+$/, "");
+    } catch {
+        return null;
+    }
+};
+
+const deleteFromCloudinary = async publicId => {
     try {
         if (!publicId) return null;
-        // publicId ব্যবহার করে Cloudinary থেকে ফাইল মুছে ফেলা
-        const response = await cloudinary.uploader.destroy(publicId, {
-            resource_type: "auto"
+        return await cloudinary.uploader.destroy(publicId, {
+            resource_type: "image"
         });
-        return response;
     } catch (error) {
         console.log("Error deleting from cloudinary:", error);
         return null;
     }
 };
-};
 
-export { uploadOnCloudinary, deleteFromCloudinary };
+export {
+    uploadOnCloudinary,
+    deleteFromCloudinary,
+    publicIdFromUrl,
+    removeLocalFile
+};

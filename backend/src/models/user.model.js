@@ -69,10 +69,10 @@ const userSchema = new mongoose.Schema(
             unique: true,
             sparse: true // if apikey then not check the unique
         },
-      monthlyEmailLimit: {
-    type: Number,
-    default: 500 
-      },
+        monthlyEmailLimit: {
+            type: Number,
+            default: 500
+        },
 
         refreshToken: {
             type: String
@@ -81,18 +81,16 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
 
-const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
+    if (this.isNew && superAdminEmail && this.email === superAdminEmail) {
+        this.role = "admin";
+        this.isSuperAdmin = true;
+    }
 
-  if (this.isNew && this.email === superAdminEmail ) {
-
-    this.role = "admin";
-    this.isSuperAdmin = true
-  }
-
-  
-    if (!this.isModified("password")) return;
+    // OTP দিয়ে register হলে password আগেই hash করা থাকে, তাই আবার hash করা হবে না
+    if (!this.isModified("password") || this.$locals.skipHash) return;
 
     this.password = await bcrypt.hash(this.password, 10);
 });

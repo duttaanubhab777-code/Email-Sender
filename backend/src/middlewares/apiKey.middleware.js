@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiKey } from "../models/ApiKey.model.js";
+import { Submission } from "../models/submission.model.js";
 
 const verifyApiKey = asyncHandler(async (req, res, next) => {
     
@@ -11,7 +12,7 @@ const verifyApiKey = asyncHandler(async (req, res, next) => {
     }
 
     // ২. ডেটাবেসে এই Key-টা খোঁজা এবং সাথে সাথে ইউজারের ডেটাও (populate করে) নিয়ে আসা
-    const apiKeyDoc = await ApiKey.findOne({ key: providedKey }).populate("user", "fullName email");
+    const apiKeyDoc = await ApiKey.findOne({ key: providedKey }).populate("user", "fullName email monthlyEmailLimit isBlocked");
 
     if (!apiKeyDoc) {
         throw new ApiError(401, "Invalid API Key");
@@ -22,9 +23,22 @@ const verifyApiKey = asyncHandler(async (req, res, next) => {
         throw new ApiError(403, "This API Key is disabled. Please enable it from your dashboard.");
     }
 
-    // ৪. ইউজারের মাসিক লিমিট চেক করা (usageCount কি monthlyLimit এর সমান বা বেশি হয়ে গেছে?)
-    if (apiKeyDoc.usageCount >= apiKeyDoc.monthlyLimit) {
-        throw new ApiError(429, "Monthly email limit exceeded for this API Key. Please upgrade your plan.");
+    // ৪. মালিক block হলে বা এই মাসের limit শেষ হলে বন্ধ (limit আছে user.monthlyEmailLimit এ)
+    if (!apiKeyDoc.user || apiKeyDoc.user.isBlocked) {
+        throw new ApiError(403, "This API Key owner is not allowed to send emails");
+    }
+
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+
+    const usedThisMonth = await Submission.countDocuments({
+        user: apiKeyDoc.user._id,
+        createdAt: { $gte: monthStart }
+    });
+
+    if (usedThisMonth >= apiKeyDoc.user.monthlyEmailLimit) {
+        throw new ApiError(429, "Monthly email limit exceeded. Please upgrade your plan.");
     }
 
     // 🌟 ম্যাজিক: সব চেক পাস করলে, পরবর্তী কন্ট্রোলারের জন্য রিকোয়েস্ট অবজেক্টে ডেটাগুলো সেভ করে রাখা

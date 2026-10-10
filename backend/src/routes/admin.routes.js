@@ -1,28 +1,29 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { verifyAdmin } from "../middlewares/auth.middleware.js";
-import { 
-    getAdminStats, 
-    getAdminUsers, 
-    toggleBlockUser, 
-    makeAdmin 
+import { verifyJWT, verifyAdmin } from "../middlewares/auth.middleware.js";
+import {
+    getAdminStats,
+    getAdminUsers,
+    toggleBlockUser,
+    deleteUser,
+    makeAdmin,
+    createAdmin,
+    removeAdmin
 } from "../controllers/admin.controller.js";
 
 const router = Router();
 
-// এই রাউটগুলোতে শুধুমাত্র অ্যাডমিনরাই এক্সেস পাবে
 router.use(verifyJWT, verifyAdmin);
 
-// ড্যাশবোর্ডের টাইলসের ডেটা
+// ---- বেসিক কন্ট্রোল: Admin + Super Admin দুজনেই সরাসরি ----
 router.route("/stats").get(getAdminStats);
-
-// সব ইউজারের লিস্ট
 router.route("/users").get(getAdminUsers);
+router.route("/users/:id/block").patch(toggleBlockUser); // সাধারণ ইউজার
+router.route("/users/:id").delete(deleteUser); // সাধারণ ইউজার
 
-// ইউজারকে ব্লক বা আনব্লক করা
-router.route("/users/:id/block").patch(toggleBlockUser);
-
-// নতুন কাউকে অ্যাডমিন বানানো
+// ---- এক্সট্রা: Super Admin সরাসরি, Admin হলে Super Admin এর approval নিয়ে ----
+// (অন্য Admin কে block/delete করাও এক্সট্রা — controller এর ভিতরে চেক হয়)
+router.route("/create-admin").post(createAdmin);
 router.route("/make-admin").put(makeAdmin);
+router.route("/remove-admin").put(removeAdmin);
 
 export default router;
