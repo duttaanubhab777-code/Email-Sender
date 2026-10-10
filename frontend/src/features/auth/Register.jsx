@@ -248,7 +248,7 @@ export default function Register() {
                             autoComplete="off"
                             autoCapitalize="none"
                             spellCheck={false}
-                            placeholder="rafi.ahmed"
+                            placeholder="Anubhab Dutta"
                         />
                         <span className="adorn static">
                             {uStatus === "checking" ? (

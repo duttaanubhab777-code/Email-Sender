@@ -36,12 +36,12 @@ export default function AuthLayout({ children }) {
   `}
                         <span className="k">"name"</span>
                         {`:    `}
-                        <span className="s">"Rafi Ahmed"</span>
+                        <span className="s">"Anubhab Dutta"</span>
                         {`,
   `}
                         <span className="k">"email"</span>
                         {`:   `}
-                        <span className="s">"rafi@example.com"</span>
+                        <span className="s">"Anubhab@example.com"</span>
                         {`,
   `}
                         <span className="k">"subject"</span>
