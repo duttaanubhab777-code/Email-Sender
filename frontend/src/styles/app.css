@@ -71,7 +71,7 @@
 }
 .side-link.active {
     background: var(--brand-soft);
-    color: var(--brand);
+    color: var(--brand-text);
     font-weight: 600;
     box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -800,7 +800,7 @@
     font-size: 12.5px;
 }
 .pill-stat.good {
-    color: var(--brand);
+    color: var(--brand-text);
     border-color: var(--brand-line);
     background: var(--brand-soft);
 }
@@ -872,7 +872,7 @@
     display: grid;
     place-items: center;
     background: var(--brand-soft);
-    color: var(--brand);
+    color: var(--brand-text);
     border: 1px solid var(--brand-line);
     flex: none;
 }
@@ -1048,7 +1048,7 @@
     display: grid;
     place-items: center;
     background: var(--brand-soft);
-    color: var(--brand);
+    color: var(--brand-text);
     border: 1px solid var(--brand-line);
 }
 .sys.hot .big-ic {
@@ -1217,7 +1217,7 @@
         position: relative;
     }
     .tabbar .active {
-        color: var(--brand);
+        color: var(--brand-text);
     }
     :root[data-theme="dark"] .tabbar .active {
         color: var(--accent);
@@ -1356,5 +1356,76 @@
     .otp input {
         height: 50px;
         font-size: 20px;
+    }
+}
+
+/* ---------- Admin: keys & logins directory ---------- */
+.dir-list {
+    list-style: none;
+}
+.dir-user {
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.dir-user:last-child {
+    border-bottom: 0;
+}
+.dir-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.dir-email {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    min-width: 0;
+}
+.dir-email .icon {
+    color: var(--muted);
+    flex: none;
+}
+.dir-email .truncate {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+.dir-nokey {
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-sm);
+}
+.dir-keys {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dir-keys > li {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.8fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+}
+.dir-key-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+@media (max-width: 760px) {
+    .dir-keys > li {
+        grid-template-columns: 1fr;
+        gap: 8px;
     }
 }

@@ -85,6 +85,12 @@ export default function AdminDashboard() {
             text: "Search, block, unblock or delete accounts."
         },
         {
+            to: "/admin/directory",
+            icon: "database",
+            title: "Keys, emails & logins",
+            text: "See every user's email, API keys and login history."
+        },
+        {
             to: "/admin/create-admin",
             icon: "userPlus",
             title: "Create admin",

@@ -2,6 +2,9 @@ import { ApiError } from "../utils/ApiError.js";
 
 const hits = new Map();
 
+// Kill switch এর wipe শেষে সব limit পরিষ্কার (নতুন করে শুরু)
+export const resetRateLimits = () => hits.clear();
+
 // ছোট in-memory rate limiter (extra package লাগে না)
 export const rateLimit = ({ name, windowMs, max, key }) => (req, res, next) => {
     const id = `${name}:${key ? key(req) : req.ip}`;

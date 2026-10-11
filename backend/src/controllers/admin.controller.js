@@ -178,4 +178,153 @@ const removeAdmin = asyncHandler(async (req, res) => {
     );
 });
 
-export { getAdminStats, getAdminUsers, toggleBlockUser, deleteUser, makeAdmin, createAdmin, removeAdmin };
+// regex এ ব্যবহারের আগে বিশেষ চিহ্ন escape (search injection আটকাতে)
+const escapeRegex = v => String(v).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const pageParams = query => {
+    const limit = Math.min(Math.max(parseInt(query.limit, 10) || 20, 1), 100);
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    return { limit, page, skip: (page - 1) * limit };
+};
+
+// ৮. সব ইউজারের email + API key (Admin + Super Admin দুজনেই দেখতে পারবে)
+const getUserDirectory = asyncHandler(async (req, res) => {
+    const { limit, page, skip } = pageParams(req.query);
+    const q = String(req.query.q ?? "").trim().slice(0, 60);
+
+    const filter = {};
+    if (req.query.role === "admin" || req.query.role === "user") filter.role = req.query.role;
+    if (q) {
+        const rx = new RegExp(escapeRegex(q), "i");
+        const keyOwners = await ApiKey.find({ $or: [{ key: rx }, { name: rx }] }).distinct("user");
+        filter.$or = [
+            { fullName: rx },
+            { username: rx },
+            { email: rx },
+            { _id: { $in: keyOwners } }
+        ];
+    }
+
+    const [users, total] = await Promise.all([
+        User.find(filter)
+            .select("fullName username email avatar role isSuperAdmin isBlocked createdAt")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        User.countDocuments(filter)
+    ]);
+
+    const keys = await ApiKey.find({ user: { $in: users.map(u => u._id) } })
+        .select("user name key isActive usageCount createdAt")
+        .sort({ createdAt: -1 })
+        .lean();
+
+    const byUser = new Map();
+    for (const k of keys) {
+        const id = String(k.user);
+        if (!byUser.has(id)) byUser.set(id, []);
+        byUser.get(id).push({
+            _id: k._id,
+            name: k.name,
+            key: k.key,
+            isActive: k.isActive,
+            usageCount: k.usageCount,
+            createdAt: k.createdAt
+        });
+    }
+
+    const items = users.map(u => ({ ...u, apiKeys: byUser.get(String(u._id)) || [] }));
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { items, total, page, limit, totalPages }, "User directory fetched successfully"));
+});
+
+// ৯. সব ইউজারের login history (IP + সময়) — নতুনটা আগে (Admin + Super Admin)
+const getLoginHistory = asyncHandler(async (req, res) => {
+    const { limit, page, skip } = pageParams(req.query);
+    const q = String(req.query.q ?? "").trim().slice(0, 60);
+
+    const match = { "loginHistory.0": { $exists: true } };
+    if (mongoose.isValidObjectId(req.query.userId)) {
+        match._id = new mongoose.Types.ObjectId(req.query.userId);
+    }
+    if (q) {
+        const rx = new RegExp(escapeRegex(q), "i");
+        match.$or = [{ fullName: rx }, { username: rx }, { email: rx }, { "loginHistory.ipAddress": rx }];
+    }
+
+    // search IP দিয়ে হলে শুধু মিলে যাওয়া IP এর এন্ট্রি দেখানো
+    const ipRx = q ? new RegExp(escapeRegex(q), "i") : null;
+
+    const [result] = await User.aggregate([
+        { $match: match },
+        { $unwind: "$loginHistory" },
+        ...(ipRx
+            ? [
+                  {
+                      $match: {
+                          $or: [
+                              { fullName: ipRx },
+                              { username: ipRx },
+                              { email: ipRx },
+                              { "loginHistory.ipAddress": ipRx }
+                          ]
+                      }
+                  }
+              ]
+            : []),
+        { $sort: { "loginHistory.loginTime": -1 } },
+        {
+            $facet: {
+                items: [
+                    { $skip: skip },
+                    { $limit: limit },
+                    {
+                        $project: {
+                            _id: 0,
+                            userId: "$_id",
+                            fullName: 1,
+                            username: 1,
+                            email: 1,
+                            avatar: 1,
+                            role: 1,
+                            isSuperAdmin: 1,
+                            isBlocked: 1,
+                            ipAddress: "$loginHistory.ipAddress",
+                            loginTime: "$loginHistory.loginTime"
+                        }
+                    }
+                ],
+                total: [{ $count: "n" }]
+            }
+        }
+    ]);
+
+    const total = result?.total?.[0]?.n ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                { items: result?.items ?? [], total, page, limit, totalPages },
+                "Login history fetched successfully"
+            )
+        );
+});
+
+export {
+    getAdminStats,
+    getAdminUsers,
+    toggleBlockUser,
+    deleteUser,
+    makeAdmin,
+    createAdmin,
+    removeAdmin,
+    getUserDirectory,
+    getLoginHistory
+};

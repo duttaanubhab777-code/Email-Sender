@@ -8,8 +8,18 @@ const getTransporter = () =>
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT),
         secure: Number(process.env.SMTP_PORT) === 465,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        // SMTP আটকে গেলে request অনন্তকাল "loading" এ থাকবে না
+        connectionTimeout: 15_000,
+        greetingTimeout: 15_000,
+        socketTimeout: 30_000
     }));
+
+// Kill switch এর পরে নতুন করে connection নেওয়ার জন্য
+export const resetMailer = () => {
+    transporter?.close?.();
+    transporter = undefined;
+};
 
 export const escapeHtml = v =>
     String(v ?? "")

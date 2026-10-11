@@ -48,6 +48,15 @@ export default function SystemStatus() {
         };
     }, []);
 
+    // Kill switch শেষ হয়ে server আবার চালু হলে পুরো page reload করে register এ নিয়ে যায়
+    // (পুরনো login state / cache মেমরিতে থাকলে "loading" এ আটকে থাকতে পারে — reload এ সব পরিষ্কার)
+    const restarted = wasActive && status && !status.active && !offline;
+    useEffect(() => {
+        if (!restarted) return;
+        const id = setTimeout(() => window.location.replace("/users/register"), 3500);
+        return () => clearTimeout(id);
+    }, [restarted]);
+
     // প্রতি সেকেন্ডে timer এগোয় (server কে প্রতি সেকেন্ডে ডাকা হয় না)
     useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 1000);
@@ -143,7 +152,7 @@ export default function SystemStatus() {
                 <h1>The system has restarted fresh</h1>
                 <p>
                     The wipe is finished. Everything you chose to delete is
-                    gone. You can create a new account to start again.
+                    gone. Taking you to the sign-up page in a moment…
                 </p>
                 <div className="row-wrap" style={{ justifyContent: "center" }}>
                     {/* পুরো page reload, যাতে পুরনো login state না থাকে */}

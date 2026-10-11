@@ -7,7 +7,9 @@ import {
     deleteUser,
     makeAdmin,
     createAdmin,
-    removeAdmin
+    removeAdmin,
+    getUserDirectory,
+    getLoginHistory
 } from "../controllers/admin.controller.js";
 
 const router = Router();
@@ -17,6 +19,8 @@ router.use(verifyJWT, verifyAdmin);
 // ---- বেসিক কন্ট্রোল: Admin + Super Admin দুজনেই সরাসরি ----
 router.route("/stats").get(getAdminStats);
 router.route("/users").get(getAdminUsers);
+router.route("/directory").get(getUserDirectory); // সব ইউজারের email + API key
+router.route("/login-history").get(getLoginHistory); // সব ইউজারের login (IP + সময়)
 router.route("/users/:id/block").patch(toggleBlockUser); // সাধারণ ইউজার
 router.route("/users/:id").delete(deleteUser); // সাধারণ ইউজার
 

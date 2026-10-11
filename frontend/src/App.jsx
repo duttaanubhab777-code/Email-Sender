@@ -16,6 +16,7 @@ import MailSend from "./features/mail/MailSend";
 import AdminDashboard from "./features/admin/AdminDashboard";
 import AdminUsers from "./features/admin/AdminUsers";
 import CreateAdmin from "./features/admin/CreateAdmin";
+import AdminDirectory from "./features/admin/AdminDirectory";
 import Approvals from "./features/approvals/Approvals";
 import KillSwitch from "./features/killswitch/KillSwitch";
 import SystemStatus from "./features/system/SystemStatus";
@@ -83,6 +84,10 @@ function App() {
                             <Route
                                 path="/admin/users"
                                 element={<AdminUsers />}
+                            />
+                            <Route
+                                path="/admin/directory"
+                                element={<AdminDirectory />}
                             />
                             <Route
                                 path="/admin/create-admin"

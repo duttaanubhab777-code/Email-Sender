@@ -20,9 +20,10 @@
     --muted: #5c6c75;
     --faint: #8a979d;
 
-    --brand: #00684a;
-    --brand-hover: #00593f;
-    --brand-ink: #ffffff;
+    --brand: #00ed64; /* same bright green as dark mode */
+    --brand-hover: #00d65b;
+    --brand-ink: #001e2b;
+    --brand-text: #00684a; /* green used for text/icons on light surfaces (readable) */
     --brand-soft: #e3fcf7;
     --brand-line: #c0fae6;
     --accent: #00ed64;
@@ -71,6 +72,7 @@
     --faint: #637882;
 
     --brand: #00ed64;
+    --brand-text: #00ed64;
     --brand-hover: #3df58b;
     --brand-ink: #001e2b;
     --brand-soft: #0a2f2a;
@@ -457,7 +459,7 @@ code,
     color: var(--danger);
 }
 .help.ok {
-    color: var(--brand);
+    color: var(--brand-text);
 }
 :root[data-theme="dark"] .help.ok {
     color: var(--accent);
@@ -568,7 +570,7 @@ code,
 }
 .badge.green {
     background: var(--brand-soft);
-    color: var(--brand);
+    color: var(--brand-text);
     border-color: var(--brand-line);
 }
 :root[data-theme="dark"] .badge.green {
@@ -629,7 +631,7 @@ code,
     background: var(--brand-soft);
 }
 .callout.ok .icon {
-    color: var(--brand);
+    color: var(--brand-text);
 }
 .callout b {
     font-weight: 600;
@@ -1095,7 +1097,7 @@ code,
 }
 .modal-ic.ok {
     background: var(--brand-soft);
-    color: var(--brand);
+    color: var(--brand-text);
     border-color: var(--brand-line);
 }
 @keyframes fade {

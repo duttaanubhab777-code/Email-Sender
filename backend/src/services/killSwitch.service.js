@@ -10,7 +10,9 @@ import { Submission } from "../models/submission.model.js";
 import { SystemState } from "../models/systemState.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { deleteFromCloudinary, publicIdFromUrl } from "../utils/cloudinary.js";
-import { sendNotificationEmail } from "./mailer.service.js";
+import { sendNotificationEmail, resetMailer } from "./mailer.service.js";
+import { resetRateLimits } from "../middlewares/rateLimit.middleware.js";
+import { prepareDatabase } from "../db/index.js";
 import { killCountdownSeconds } from "../constants.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -196,9 +198,19 @@ const deleteUsersByRole = async role => {
     await User.deleteMany({ _id: { $in: ids } });
 };
 
-const rebuildIndexes = async () => {
-    for (const model of Object.values(mongoose.models)) {
-        await model.createIndexes().catch(() => {});
+// wipe এর পরে server নিজেই নতুন করে তৈরি হয় — হাতে restart দিতে হয় না।
+// database drop হলে collection + index দুটোই চলে যায়, তাই আবার বানাতে হয়।
+const recoverAfterWipe = async () => {
+    resetRateLimits();
+    resetMailer();
+    for (let i = 1; i <= 3; i++) {
+        try {
+            await prepareDatabase();
+            return;
+        } catch (error) {
+            console.error(`[KILL] recovery attempt ${i} failed:`, error);
+            await new Promise(r => setTimeout(r, 2000 * i));
+        }
     }
 };
 
@@ -213,6 +225,8 @@ const runKill = async () => {
     );
 
     if (!doc) {
+        // এর মানে database আগের চেষ্টাতেই drop হয়ে গেছে — নতুন করে সাজিয়ে gate খুলে দেওয়া
+        await recoverAfterWipe();
         state = null;
         running = false;
         return;
@@ -255,15 +269,19 @@ const runKill = async () => {
     const codeDeleted =
         !dryRun && targets.includes("code") && process.env.KILL_ALLOW_CODE_DELETE === "true";
 
-    await SystemState.deleteOne({ key: "kill" }).catch(() => {});
-    state = null;
-    running = false;
-
     if (codeDeleted) {
+        await SystemState.deleteOne({ key: "kill" }).catch(() => {});
+        state = null;
+        running = false;
         console.warn("[KILL] code deleted. Shutting down.");
         process.exit(0);
     }
 
-    await rebuildIndexes();
+    // গেট বন্ধ রেখেই নতুন database তৈরি করা — তৈরি হওয়ার আগে কোনো request ঢুকতে পারবে না
+    if (!dryRun) await recoverAfterWipe();
+
+    await SystemState.deleteOne({ key: "kill" }).catch(() => {});
+    state = null;
+    running = false;
     console.warn("[KILL] finished. System is running fresh again.");
 };

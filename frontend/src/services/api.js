@@ -205,6 +205,12 @@ export async function sendMailRaw(apiKey, payload) {
 // ---------- Admin ----------
 export const getAdminStats = signal => request("/admin/stats", { signal });
 export const getAdminUsers = signal => request("/admin/users", { signal });
+// সব ইউজারের email + API key (Admin + Super Admin)
+export const getAdminDirectory = (params, signal) =>
+    request(`/admin/directory?${new URLSearchParams(params)}`, { signal });
+// সব ইউজারের login history — IP + সময় (Admin + Super Admin)
+export const getAdminLoginHistory = (params, signal) =>
+    request(`/admin/login-history?${new URLSearchParams(params)}`, { signal });
 export const setUserBlocked = (id, isBlocked, approvalId) =>
     request(`/admin/users/${id}/block`, {
         method: "PATCH",

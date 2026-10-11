@@ -41,6 +41,15 @@ Countdown শুরু হলে cancel করার কোনো route নে�
 `{active, status, endsAt, remainingSeconds}` — frontend এটা দিয়ে timer দেখাবে।
 শেষ হলে ডিলিট চলে, তারপর system ফাঁকা অবস্থায় নতুন করে চালু (`code` ডিলিট করলে process বন্ধ হয়ে যায়)।
 
+## Admin: keys & login history (`/api/v1/admin`) — Admin + Super Admin দুজনেই
+- GET /directory?q=&role=&page=&limit= — সব ইউজারের email + তাদের API key (key সহ)। `q` দিয়ে নাম/email/username/API key খোঁজা যায়
+  → `{items:[{_id, fullName, username, email, role, isBlocked, apiKeys:[{name,key,isActive,usageCount}]}], total, page, limit, totalPages}`
+- GET /login-history?q=&userId=&page=&limit= — সব ইউজারের login, নতুনটা আগে (প্রতি ইউজারের সর্বশেষ ২০টা)
+  → `{items:[{userId, fullName, username, email, ipAddress, loginTime}], total, page, limit, totalPages}`। `q` দিয়ে নাম/email/IP খোঁজা যায়
+
+## Kill switch এর পরে স্বয়ংক্রিয় recovery
+`dropDatabase` এর পর server নিজেই সব collection + index আবার বানায় (`prepareDatabase`), rate-limit ও mail connection রিসেট করে, তারপরেই সাইট খোলে। হাতে restart লাগে না। server চালু হওয়ার সময়ও একই কাজ হয়, তাই fresh database এ deploy করলেও আলাদা কিছু করতে হয় না।
+
 ## নতুন .env — `.env.example` দেখুন
 KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_SECONDS, OTP_SECRET, TRUST_PROXY
 

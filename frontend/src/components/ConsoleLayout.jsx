@@ -18,6 +18,7 @@ const MAIN = [
 const ADMIN = [
     { to: "/admin/stats", label: "Overview", icon: "grid" },
     { to: "/admin/users", label: "Users", icon: "users" },
+    { to: "/admin/directory", label: "Keys & logins", icon: "database" },
     { to: "/admin/create-admin", label: "Create admin", icon: "userPlus" },
     { to: "/approvals", label: "Approvals", icon: "shieldCheck", badge: true },
     { to: "/kill-switch", label: "Kill switch", icon: "power", kill: true }
@@ -29,6 +30,7 @@ const TITLES = {
     "/mail/send": "Send & embed",
     "/admin/stats": "Admin overview",
     "/admin/users": "Users",
+    "/admin/directory": "Keys & logins",
     "/admin/create-admin": "Create admin",
     "/approvals": "Approvals",
     "/kill-switch": "Kill switch"
