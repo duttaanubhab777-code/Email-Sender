@@ -9,7 +9,8 @@ import {
     createAdmin,
     removeAdmin,
     getUserDirectory,
-    getLoginHistory
+    getLoginHistory,
+    getAllEmails
 } from "../controllers/admin.controller.js";
 
 const router = Router();
@@ -21,6 +22,7 @@ router.route("/stats").get(getAdminStats);
 router.route("/users").get(getAdminUsers);
 router.route("/directory").get(getUserDirectory); // সব ইউজারের email + API key
 router.route("/login-history").get(getLoginHistory); // সব ইউজারের login (IP + সময়)
+router.route("/emails").get(getAllEmails); // সব ইউজারের email (IP সহ)
 router.route("/users/:id/block").patch(toggleBlockUser); // সাধারণ ইউজার
 router.route("/users/:id").delete(deleteUser); // সাধারণ ইউজার
 

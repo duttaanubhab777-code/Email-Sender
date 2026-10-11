@@ -20,6 +20,7 @@ import AdminDirectory from "./features/admin/AdminDirectory";
 import Approvals from "./features/approvals/Approvals";
 import KillSwitch from "./features/killswitch/KillSwitch";
 import SystemStatus from "./features/system/SystemStatus";
+import Notifications from "./features/notifications/Notifications";
 import NotFound from "./features/notfound/NotFound";
 
 // Frontend route গুলো ব্যাকএন্ডের API path এর সাথে হুবহু মেলানো:
@@ -70,6 +71,10 @@ function App() {
                         />
                         <Route path="/apiKeys/all" element={<ApiKeys />} />
                         <Route path="/mail/send" element={<MailSend />} />
+                        <Route
+                            path="/notifications"
+                            element={<Notifications />}
+                        />
 
                         {/* শুধু অ্যাডমিনদের জন্য (Admin + Super Admin) */}
                         <Route element={<AdminRoute />}>

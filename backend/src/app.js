@@ -42,6 +42,7 @@ import adminRouter from "./routes/admin.routes.js";
 import approvalRouter from "./routes/approval.routes.js";
 import killSwitchRouter from "./routes/killSwitch.routes.js";
 import systemRouter from "./routes/system.routes.js";
+import notificationRouter from "./routes/notification.routes.js";
 // routes declaration
 
 app.use("/api/v1/users", userRouter);
@@ -49,6 +50,7 @@ app.use("/api/v1/apiKeys", apiKeyRouter);
 app.use("/api/v1/mail", submissionRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/approvals", approvalRouter);
+app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/kill-switch", killSwitchRouter);
 app.use("/api/v1/system", systemRouter);
 

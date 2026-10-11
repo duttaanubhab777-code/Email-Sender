@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiKey } from "../models/ApiKey.model.js";
+import { notifyUser } from "../services/notification.service.js";
 
 // ১. নতুন API Key তৈরি করার কন্ট্রোলার
 const createApiKey = asyncHandler(async (req, res) => {
@@ -21,6 +22,13 @@ const createApiKey = asyncHandler(async (req, res) => {
     if (!newApiKey) {
         throw new ApiError(500, "Something went wrong while generating API Key");
     }
+
+    notifyUser(req.user._id, {
+        type: "api_key_created",
+        title: "API key created",
+        body: String(name).trim().slice(0, 80),
+        link: "/apiKeys/all"
+    });
 
     return res.status(201).json(
         new ApiResponse(201, newApiKey, "API Key generated successfully!")
@@ -60,6 +68,13 @@ const deleteApiKey = asyncHandler(async (req, res) => {
     if (!deletedKey) {
         throw new ApiError(404, "API Key not found or you are not authorized to delete it");
     }
+
+    notifyUser(req.user._id, {
+        type: "api_key_deleted",
+        title: "API key deleted",
+        body: deletedKey.name,
+        link: "/apiKeys/all"
+    });
 
     return res.status(200).json(
         new ApiResponse(200, {}, "API Key deleted successfully")

@@ -211,6 +211,21 @@ export const getAdminDirectory = (params, signal) =>
 // সব ইউজারের login history — IP + সময় (Admin + Super Admin)
 export const getAdminLoginHistory = (params, signal) =>
     request(`/admin/login-history?${new URLSearchParams(params)}`, { signal });
+// সব ইউজারের email — sender, IP, message সহ (Admin + Super Admin)
+export const getAdminEmails = (params, signal) =>
+    request(`/admin/emails?${new URLSearchParams(params)}`, { signal });
+
+// Notifications (প্রতিটা ইউজারের নিজের)
+export const getNotifications = (params, signal) =>
+    request(`/notifications?${new URLSearchParams(params)}`, { signal });
+export const getUnreadCount = signal =>
+    request("/notifications/unread-count", { signal });
+export const markNotificationRead = id =>
+    request(`/notifications/${id}/read`, { method: "PATCH" });
+export const markAllNotificationsRead = () =>
+    request("/notifications/read-all", { method: "PATCH" });
+export const deleteNotification = id =>
+    request(`/notifications/${id}`, { method: "DELETE" });
 export const setUserBlocked = (id, isBlocked, approvalId) =>
     request(`/admin/users/${id}/block`, {
         method: "PATCH",

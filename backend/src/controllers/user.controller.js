@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { notifyUser, notifyAdmins } from "../services/notification.service.js";
 import {
     uploadOnCloudinary,
     deleteFromCloudinary,
@@ -223,6 +224,19 @@ const verifyRegisterOtp = asyncHandler(async (req, res) => {
         }
         throw error;
     }
+
+    notifyAdmins({
+        type: "user_joined",
+        title: "New user joined",
+        body: `${user.fullName} (${user.email})`,
+        link: "/admin/users"
+    });
+    notifyUser(user._id, {
+        type: "welcome",
+        title: "Welcome to Email Sender",
+        body: "Create an API key to start receiving form messages in your inbox.",
+        link: "/apiKeys/all"
+    });
 
     return finishLogin(
         req,
@@ -453,6 +467,13 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
     user.password = newPassword;
     await user.save({ validateBeforeSave: false });
+
+    notifyUser(user._id, {
+        type: "password_changed",
+        title: "Your password was changed",
+        body: "If this wasn't you, reset your password right away.",
+        link: "/users/current-user"
+    });
 
     return res
         .status(200)

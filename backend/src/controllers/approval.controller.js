@@ -7,6 +7,7 @@ import { User } from "../models/user.model.js";
 import { Approval } from "../models/approval.model.js";
 import { normalizeTargets } from "../services/killSwitch.service.js";
 import { sendNotificationEmail } from "../services/mailer.service.js";
+import { notifyUser, notifyAdmins } from "../services/notification.service.js";
 import {
     EXTRA_ACTIONS,
     APPROVAL_PENDING_HOURS,
@@ -69,6 +70,16 @@ const requestApproval = asyncHandler(async (req, res) => {
         requestedBy: req.user._id,
         expiresAt: new Date(Date.now() + APPROVAL_PENDING_HOURS * 60 * 60 * 1000)
     });
+
+    notifyAdmins(
+        {
+            type: "approval_request",
+            title: "Approval needed",
+            body: `${req.user.fullName} requested: ${action.replaceAll("_", " ")}`,
+            link: "/approvals"
+        },
+        { superOnly: true }
+    );
 
     const supers = await User.find({ isSuperAdmin: true }).select("email");
     await Promise.all(
@@ -134,6 +145,12 @@ const approveApproval = asyncHandler(async (req, res) => {
     approval.expiresAt = new Date(Date.now() + APPROVAL_VALID_MINUTES * 60 * 1000);
     await approval.save();
 
+    notifyUser(approval.requestedBy._id, {
+        type: "approval_approved",
+        title: "Your request was approved",
+        body: `${approval.action.replaceAll("_", " ")} — valid for ${APPROVAL_VALID_MINUTES} minutes, one use`,
+        link: "/approvals"
+    });
     await notifySafely(
         approval.requestedBy.email,
         "Permission approved",
@@ -157,6 +174,12 @@ const denyApproval = asyncHandler(async (req, res) => {
     approval.note = String(req.body.note ?? "").trim().slice(0, 300);
     await approval.save();
 
+    notifyUser(approval.requestedBy._id, {
+        type: "approval_denied",
+        title: "Your request was denied",
+        body: approval.action.replaceAll("_", " "),
+        link: "/approvals"
+    });
     await notifySafely(
         approval.requestedBy.email,
         "Permission denied",

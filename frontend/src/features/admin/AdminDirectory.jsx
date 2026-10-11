@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { getAdminDirectory, getAdminLoginHistory } from "../../services/api";
+import { useSearchParams } from "react-router-dom";
+import {
+    getAdminDirectory,
+    getAdminEmails,
+    getAdminLoginHistory
+} from "../../services/api";
 import useAsync from "../../hooks/useAsync";
 import Avatar from "../../components/Avatar";
 import Icon from "../../components/Icons";
+import Drawer from "../../components/ui/Drawer";
 import {
     Badge,
     Callout,
@@ -17,6 +23,7 @@ import { fmtDate, fmtNum, maskKey, timeAgo } from "../../lib/format";
 
 const TABS = [
     { id: "keys", label: "Emails & API keys", icon: "key" },
+    { id: "emails", label: "Sent emails", icon: "inbox" },
     { id: "logins", label: "Login history", icon: "clock" }
 ];
 const PAGE_SIZE = 15;
@@ -45,23 +52,38 @@ function useDebounced(value, ms = 350) {
 
 // GET /admin/directory · GET /admin/login-history — Admin + Super Admin দুজনেই দেখতে পারে
 export default function AdminDirectory() {
-    const [tab, setTab] = useState("keys");
+    const [sp] = useSearchParams();
+    const urlTab = sp.get("tab");
+    const [tab, setTab] = useState(
+        TABS.some(t => t.id === urlTab) ? urlTab : "keys"
+    );
     const [q, setQ] = useState("");
+    const [status, setStatus] = useState("all");
     const [page, setPage] = useState(1);
+    const [open, setOpen] = useState(null);
     const search = useDebounced(q.trim());
 
+    // নোটিফিকেশন থেকে ?tab=emails দিয়ে এলে সেই ট্যাব খোলা
+    useEffect(() => {
+        if (TABS.some(t => t.id === urlTab)) setTab(urlTab);
+    }, [urlTab]);
+
     // tab বা search বদলালে প্রথম পাতায় ফেরা
-    useEffect(() => setPage(1), [tab, search]);
+    useEffect(() => setPage(1), [tab, search, status]);
 
     const { data, loading, error, reload } = useAsync(
         signal => {
             const params = { page, limit: PAGE_SIZE };
             if (search) params.q = search;
+            if (tab === "emails") {
+                if (status !== "all") params.status = status;
+                return getAdminEmails(params, signal);
+            }
             return tab === "keys"
                 ? getAdminDirectory(params, signal)
                 : getAdminLoginHistory(params, signal);
         },
-        [tab, search, page]
+        [tab, search, page, status]
     );
 
     const items = data?.items ?? [];
@@ -114,19 +136,35 @@ export default function AdminDirectory() {
                                 placeholder={
                                     tab === "keys"
                                         ? "Search name, email, username or API key"
-                                        : "Search name, email or IP address"
+                                        : tab === "emails"
+                                          ? "Search sender, subject, message, user or IP"
+                                          : "Search name, email or IP address"
                                 }
                                 value={q}
                                 onChange={e => setQ(e.target.value)}
                                 aria-label="Search"
                             />
                         </div>
+                        {tab === "emails" && (
+                            <select
+                                className="select sm"
+                                value={status}
+                                onChange={e => setStatus(e.target.value)}
+                                aria-label="Filter by status"
+                            >
+                                <option value="all">All statuses</option>
+                                <option value="sent">Sent</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        )}
                         <span className="muted" style={{ fontSize: 13 }}>
                             {loading && !data
                                 ? "Loading…"
                                 : tab === "keys"
                                   ? `${fmtNum(total)} user${total === 1 ? "" : "s"}`
-                                  : `${fmtNum(total)} sign-in${total === 1 ? "" : "s"}`}
+                                  : tab === "emails"
+                                    ? `${fmtNum(total)} email${total === 1 ? "" : "s"}`
+                                    : `${fmtNum(total)} sign-in${total === 1 ? "" : "s"}`}
                         </span>
                     </div>
 
@@ -140,18 +178,28 @@ export default function AdminDirectory() {
                         <ErrorState message={error} onRetry={reload} />
                     ) : items.length === 0 ? (
                         <Empty
-                            icon={tab === "keys" ? "users" : "clock"}
+                            icon={
+                                tab === "keys"
+                                    ? "users"
+                                    : tab === "emails"
+                                      ? "inbox"
+                                      : "clock"
+                            }
                             title={
                                 tab === "keys"
                                     ? "No users found"
-                                    : "No sign-ins found"
+                                    : tab === "emails"
+                                      ? "No emails found"
+                                      : "No sign-ins found"
                             }
                             text={
-                                search
-                                    ? "Try a different search."
+                                search || status !== "all"
+                                    ? "Try a different search or filter."
                                     : tab === "keys"
                                       ? "Users will appear here once they register."
-                                      : "Sign-ins are recorded from now on."
+                                      : tab === "emails"
+                                        ? "Emails sent through any user's API key will show up here."
+                                        : "Sign-ins are recorded from now on."
                             }
                         />
                     ) : tab === "keys" ? (
@@ -160,6 +208,18 @@ export default function AdminDirectory() {
                                 <UserBlock key={u._id} u={u} />
                             ))}
                         </ul>
+                    ) : tab === "emails" ? (
+                        <>
+                            <div className="mail-stats">
+                                <Badge tone="green" dot>
+                                    {fmtNum(data?.sent ?? 0)} sent
+                                </Badge>
+                                <Badge tone="red" dot>
+                                    {fmtNum(data?.failed ?? 0)} failed
+                                </Badge>
+                            </div>
+                            <EmailTable items={items} onOpen={setOpen} />
+                        </>
                     ) : (
                         <LoginTable items={items} />
                     )}
@@ -188,6 +248,14 @@ export default function AdminDirectory() {
                         </div>
                     )}
                 </section>
+
+                <Drawer
+                    open={!!open}
+                    onClose={() => setOpen(null)}
+                    title="Email details"
+                >
+                    {open && <EmailDetail m={open} />}
+                </Drawer>
 
                 {tab === "logins" && (
                     <p className="muted" style={{ fontSize: 12.5 }}>
@@ -342,5 +410,126 @@ function LoginTable({ items }) {
                 </tbody>
             </table>
         </div>
+    );
+}
+
+// সব ইউজারের email: sender, কার API key এ এসেছে, status, সময়
+function EmailTable({ items, onOpen }) {
+    return (
+        <div className="table-wrap">
+            <table className="table stack">
+                <thead>
+                    <tr>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Received by</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map(m => (
+                        <tr
+                            key={m._id}
+                            className="clickable"
+                            onClick={() => onOpen(m)}
+                        >
+                            <td className="cell-main">
+                                <div style={{ minWidth: 0 }}>
+                                    <b className="truncate">{m.senderName}</b>
+                                    <small className="truncate" style={{ display: "block" }}>
+                                        {m.senderEmail}
+                                    </small>
+                                </div>
+                            </td>
+                            <td data-label="Subject">
+                                <span
+                                    className="truncate"
+                                    style={{ display: "block", maxWidth: 240 }}
+                                >
+                                    {m.subject || "—"}
+                                </span>
+                            </td>
+                            <td data-label="Received by">
+                                {m.owner ? (
+                                    <div className="cell-user">
+                                        <Avatar
+                                            src={m.owner.avatar}
+                                            name={m.owner.fullName}
+                                            size={28}
+                                        />
+                                        <div style={{ minWidth: 0 }}>
+                                            <b className="truncate">{m.owner.fullName}</b>
+                                            <small className="truncate">
+                                                {m.owner.email}
+                                            </small>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <span className="muted">Deleted user</span>
+                                )}
+                            </td>
+                            <td data-label="Status">
+                                <Badge tone={m.status === "sent" ? "green" : "red"} dot>
+                                    {m.status === "sent" ? "Sent" : "Failed"}
+                                </Badge>
+                            </td>
+                            <td data-label="Time" className="nowrap">
+                                {fmtStamp(m.createdAt)}
+                                <small className="muted" style={{ display: "block" }}>
+                                    {timeAgo(m.createdAt)}
+                                </small>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+// একটা email এর পুরো বিবরণ (user এর নিজের dashboard এর মতো, সাথে কার account এ এসেছে)
+function EmailDetail({ m }) {
+    return (
+        <>
+            <div className="row-wrap">
+                <Badge tone={m.status === "sent" ? "green" : "red"} dot>
+                    {m.status === "sent" ? "Sent" : "Failed"}
+                </Badge>
+                <span className="muted">{fmtStamp(m.createdAt)}</span>
+            </div>
+            <h3 style={{ fontSize: 18 }}>{m.subject || "(no subject)"}</h3>
+            <dl className="dl">
+                <dt>From</dt>
+                <dd>
+                    {m.senderName}{" "}
+                    <span className="muted">&lt;{m.senderEmail}&gt;</span>
+                </dd>
+                <dt>Delivered to</dt>
+                <dd>{m.receiverEmail}</dd>
+                <dt>Account</dt>
+                <dd>
+                    {m.owner ? (
+                        <>
+                            {m.owner.fullName}{" "}
+                            <span className="muted">@{m.owner.username}</span>
+                        </>
+                    ) : (
+                        "Deleted user"
+                    )}
+                </dd>
+                <dt>API key</dt>
+                <dd>{m.apiKeyName}</dd>
+                <dt>Sender IP</dt>
+                <dd className="mono">{m.ipAddress || "—"}</dd>
+            </dl>
+            <div>
+                <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+                    <div className="label">Message</div>
+                    <CopyButton text={m.message} label="Copy" successMsg="Message copied" />
+                </div>
+                <div className="msg-box">{m.message}</div>
+            </div>
+        </>
     );
 }

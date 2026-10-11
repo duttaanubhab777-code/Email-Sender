@@ -6,6 +6,8 @@ import { getAdminStats } from "../services/api";
 import Avatar from "./Avatar";
 import Icon from "./Icons";
 import ThemeToggle from "./ThemeToggle";
+import NotificationBell from "./NotificationBell";
+import { NotificationProvider, useNotifications } from "../context/NotificationContext";
 import { Brand } from "./Logo";
 import { RoleBadge } from "./ui/Bits";
 
@@ -15,6 +17,12 @@ const MAIN = [
     { to: "/mail/send", label: "Send & embed", icon: "send" },
     { to: "/users/current-user", label: "Account", icon: "user" }
 ];
+const NOTIF = {
+    to: "/notifications",
+    label: "Notifications",
+    icon: "bell",
+    notif: true
+};
 const ADMIN = [
     { to: "/admin/stats", label: "Overview", icon: "grid" },
     { to: "/admin/users", label: "Users", icon: "users" },
@@ -26,6 +34,7 @@ const ADMIN = [
 const TITLES = {
     "/users/dashboard": "Dashboard",
     "/users/current-user": "Account",
+    "/notifications": "Notifications",
     "/apiKeys/all": "API keys",
     "/mail/send": "Send & embed",
     "/admin/stats": "Admin overview",
@@ -40,7 +49,7 @@ const isAdminPath = p =>
     p.startsWith("/approvals") ||
     p.startsWith("/kill-switch");
 
-function SideLink({ item, pending }) {
+function SideLink({ item, pending, unread }) {
     return (
         <NavLink
             to={item.to}
@@ -53,12 +62,25 @@ function SideLink({ item, pending }) {
             {item.badge && pending > 0 && (
                 <span className="count">{pending}</span>
             )}
+            {item.notif && unread > 0 && (
+                <span className="count green">{unread > 99 ? "99+" : unread}</span>
+            )}
         </NavLink>
     );
 }
 
+// Notification provider পুরো console কে ঘিরে রাখে (ঘণ্টা + sidebar ব্যাজ + পেজ একই সংখ্যা দেখে)
 export default function ConsoleLayout() {
+    return (
+        <NotificationProvider>
+            <ConsoleShell />
+        </NotificationProvider>
+    );
+}
+
+function ConsoleShell() {
     const { user, logout } = useAuth();
+    const { unread } = useNotifications();
     const toast = useToast();
     const navigate = useNavigate();
     const { pathname } = useLocation();
@@ -125,8 +147,8 @@ export default function ConsoleLayout() {
                 </NavLink>
                 <nav className="side-nav" aria-label="Main">
                     <div className="side-group">Workspace</div>
-                    {MAIN.map(i => (
-                        <SideLink key={i.to} item={i} />
+                    {[MAIN[0], NOTIF, ...MAIN.slice(1)].map(i => (
+                        <SideLink key={i.to} item={i} unread={unread} />
                     ))}
                     {isAdmin && (
                         <>
@@ -172,6 +194,7 @@ export default function ConsoleLayout() {
                         <b>{title}</b>
                     </div>
                     <div className="top-actions">
+                        <NotificationBell />
                         <ThemeToggle />
                         <div className="menu-wrap" ref={menuRef}>
                             <button

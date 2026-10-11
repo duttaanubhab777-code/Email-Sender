@@ -47,6 +47,18 @@ Countdown শুরু হলে cancel করার কোনো route নে�
 - GET /login-history?q=&userId=&page=&limit= — সব ইউজারের login, নতুনটা আগে (প্রতি ইউজারের সর্বশেষ ২০টা)
   → `{items:[{userId, fullName, username, email, ipAddress, loginTime}], total, page, limit, totalPages}`। `q` দিয়ে নাম/email/IP খোঁজা যায়
 
+## Admin: সব ইউজারের email (`/api/v1/admin`) — Admin + Super Admin
+- GET /emails?q=&status=sent|failed&userId=&page=&limit= — সব ইউজারের API key দিয়ে আসা email (sender, subject, message, IP, কোন ইউজার/API key)
+  → `{items:[{_id, senderName, senderEmail, receiverEmail, subject, message, ipAddress, status, createdAt, owner:{...}, apiKeyName}], total, sent, failed, page, limit, totalPages}`
+
+## Notifications (`/api/v1/notifications`) — লগইন করা যেকোনো ইউজার (শুধু নিজের)
+- GET / ?filter=all|unread&page=&limit= → `{items, total, unreadCount, page, limit, totalPages}`
+- GET /unread-count → `{unreadCount}` (ঘণ্টার ব্যাজ)
+- PATCH /read-all — সব পড়া হয়েছে চিহ্নিত
+- PATCH /:id/read — একটা পড়া হয়েছে চিহ্নিত
+- DELETE /:id — একটা মুছে ফেলা
+কখন তৈরি হয়: email এলে (key এর মালিক + সব Admin), approval চাওয়া হলে (Super Admin), approve/deny হলে (যে চেয়েছে), নতুন ইউজার এলে (Admin), ইউজার block/unblock/delete হলে (অন্য Admin), Admin বানানো/সরানো হলে, API key তৈরি/মোছা, password বদলালে। ৬০ দিন পর নিজে থেকেই মুছে যায়।
+
 ## Kill switch এর পরে স্বয়ংক্রিয় recovery
 `dropDatabase` এর পর server নিজেই সব collection + index আবার বানায় (`prepareDatabase`), rate-limit ও mail connection রিসেট করে, তারপরেই সাইট খোলে। হাতে restart লাগে না। server চালু হওয়ার সময়ও একই কাজ হয়, তাই fresh database এ deploy করলেও আলাদা কিছু করতে হয় না।
 

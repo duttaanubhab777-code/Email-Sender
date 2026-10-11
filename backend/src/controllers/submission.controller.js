@@ -5,6 +5,7 @@ import { Submission } from "../models/submission.model.js";
 import { ApiKey } from "../models/ApiKey.model.js";
 import { User } from "../models/user.model.js";
 import { sendEmailService } from "../services/email.service.js";
+import { notifyUser, notifyAdmins } from "../services/notification.service.js";
 
 const safeRedirect = req => {
     try {
@@ -75,6 +76,24 @@ const sendEmail = asyncHandler(async (req, res) => {
     }
 
     // ৭. API Key-এর ইউসেজ কাউন্ট বাড়ানো
+    // নোটিফিকেশন: key এর মালিক + সব Admin (fire-and-forget, মূল কাজ আটকাবে না)
+    const subjectLine = subject || "(no subject)";
+    notifyUser(ownerUser._id, {
+        type: "email_received",
+        title: `New email from ${senderName}`,
+        body: subjectLine,
+        link: "/users/dashboard"
+    });
+    notifyAdmins(
+        {
+            type: "email_activity",
+            title: `${ownerUser.fullName} received a new email`,
+            body: `${senderName}: ${subjectLine}`,
+            link: "/admin/directory?tab=emails"
+        },
+        { exclude: [ownerUser._id] }
+    );
+
     apiKeyDoc.usageCount += 1;
     await apiKeyDoc.save({ validateBeforeSave: false });
 

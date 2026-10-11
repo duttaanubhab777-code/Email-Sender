@@ -11,6 +11,7 @@ import { ApiKey } from "../models/ApiKey.model.js";
 import { Submission } from "../models/submission.model.js";
 import { Approval } from "../models/approval.model.js";
 import { Otp } from "../models/otp.model.js";
+import { notifyUser, notifyAdmins } from "../services/notification.service.js";
 import { PASSWORD_MIN_LENGTH, USERNAME_REGEX } from "../constants.js";
 
 const SAFE = "-password -refreshToken";
@@ -74,6 +75,16 @@ const toggleBlockUser = asyncHandler(async (req, res) => {
     if (wanted) target.refreshToken = undefined; // block হলে সাথে সাথে session শেষ
     await target.save({ validateBeforeSave: false });
 
+    notifyAdmins(
+        {
+            type: wanted ? "user_blocked" : "user_unblocked",
+            title: wanted ? "User blocked" : "User unblocked",
+            body: `${target.fullName} (${target.email}) by ${req.user.fullName}`,
+            link: "/admin/users"
+        },
+        { exclude: [req.user._id] }
+    );
+
     return res.status(200).json(
         new ApiResponse(
             200,
@@ -99,6 +110,16 @@ const deleteUser = asyncHandler(async (req, res) => {
     if (target.avatar) await deleteFromCloudinary(publicIdFromUrl(target.avatar));
     await target.deleteOne();
 
+    notifyAdmins(
+        {
+            type: "user_deleted",
+            title: "User deleted",
+            body: `${target.fullName} (${target.email}) by ${req.user.fullName}`,
+            link: "/admin/users"
+        },
+        { exclude: [req.user._id] }
+    );
+
     return res.status(200).json(new ApiResponse(200, { _id: target._id }, "User deleted successfully"));
 });
 
@@ -115,6 +136,22 @@ const makeAdmin = asyncHandler(async (req, res) => {
 
     target.role = "admin";
     await target.save({ validateBeforeSave: false });
+
+    notifyUser(target._id, {
+        type: "role_changed",
+        title: "You are now an admin",
+        body: `Granted by ${req.user.fullName}`,
+        link: "/admin/stats"
+    });
+    notifyAdmins(
+        {
+            type: "admin_added",
+            title: "New admin",
+            body: `${target.fullName} (${target.email}) was made admin by ${req.user.fullName}`,
+            link: "/admin/users"
+        },
+        { exclude: [req.user._id, target._id] }
+    );
 
     return res.status(200).json(
         new ApiResponse(200, await User.findById(target._id).select(SAFE), "Successfully made the user an admin")
@@ -154,6 +191,16 @@ const createAdmin = asyncHandler(async (req, res) => {
         ipAddress: req.ip
     });
 
+    notifyAdmins(
+        {
+            type: "admin_added",
+            title: "New admin created",
+            body: `${admin.fullName} (${admin.email}) by ${req.user.fullName}`,
+            link: "/admin/users"
+        },
+        { exclude: [req.user._id, admin._id] }
+    );
+
     return res
         .status(201)
         .json(new ApiResponse(201, await User.findById(admin._id).select(SAFE), "Admin created successfully"));
@@ -172,6 +219,13 @@ const removeAdmin = asyncHandler(async (req, res) => {
 
     target.role = "user";
     await target.save({ validateBeforeSave: false });
+
+    notifyUser(target._id, {
+        type: "role_changed",
+        title: "Your admin role was removed",
+        body: `Changed by ${req.user.fullName}`,
+        link: "/users/dashboard"
+    });
 
     return res.status(200).json(
         new ApiResponse(200, await User.findById(target._id).select(SAFE), "Admin role removed")
@@ -317,7 +371,75 @@ const getLoginHistory = asyncHandler(async (req, res) => {
         );
 });
 
+// ১০. সব ইউজারের পাঠানো/পাওয়া email (Admin + Super Admin) — IP, sender, message সহ
+const getAllEmails = asyncHandler(async (req, res) => {
+    const { limit, page, skip } = pageParams(req.query);
+    const q = String(req.query.q ?? "").trim().slice(0, 60);
+
+    const filter = {};
+    if (req.query.status === "sent" || req.query.status === "failed") filter.status = req.query.status;
+    if (mongoose.isValidObjectId(req.query.userId)) filter.user = req.query.userId;
+
+    if (q) {
+        const rx = new RegExp(escapeRegex(q), "i");
+        const owners = await User.find({ $or: [{ fullName: rx }, { username: rx }, { email: rx }] }).distinct("_id");
+        filter.$or = [
+            { senderName: rx },
+            { senderEmail: rx },
+            { receiverEmail: rx },
+            { subject: rx },
+            { message: rx },
+            { ipAddress: rx },
+            { user: { $in: owners } }
+        ];
+    }
+
+    const [items, total, sent, failed] = await Promise.all([
+        Submission.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("user", "fullName username email avatar")
+            .populate("apiKey", "name")
+            .lean(),
+        Submission.countDocuments(filter),
+        Submission.countDocuments({ ...filter, status: "sent" }),
+        Submission.countDocuments({ ...filter, status: "failed" })
+    ]);
+
+    const data = items.map(s => ({
+        _id: s._id,
+        senderName: s.senderName,
+        senderEmail: s.senderEmail,
+        receiverEmail: s.receiverEmail,
+        subject: s.subject,
+        message: s.message,
+        ipAddress: s.ipAddress,
+        status: s.status,
+        createdAt: s.createdAt,
+        owner: s.user
+            ? {
+                  _id: s.user._id,
+                  fullName: s.user.fullName,
+                  username: s.user.username,
+                  email: s.user.email,
+                  avatar: s.user.avatar
+              }
+            : null,
+        apiKeyName: s.apiKey?.name ?? "Deleted key"
+    }));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { items: data, total, sent, failed, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) },
+            "Emails fetched successfully"
+        )
+    );
+});
+
 export {
+    getAllEmails,
     getAdminStats,
     getAdminUsers,
     toggleBlockUser,

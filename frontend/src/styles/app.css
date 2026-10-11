@@ -1429,3 +1429,221 @@
         gap: 8px;
     }
 }
+
+/* ---------- Admin: sent emails tab ---------- */
+.mail-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 16px 0;
+}
+
+/* ---------- Notifications ---------- */
+.btn-icon.bell {
+    position: relative;
+}
+/* WhatsApp এর মতো সবুজ গোল সংখ্যা */
+.bell-count,
+.side-link .count.green,
+.n-pill {
+    background: var(--brand);
+    color: var(--brand-ink);
+    font-weight: 700;
+}
+.bell-count {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 10.5px;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--panel);
+    animation: bell-pop 0.35s var(--ease);
+}
+@keyframes bell-pop {
+    0% {
+        transform: scale(0.4);
+    }
+    60% {
+        transform: scale(1.18);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+.n-pill {
+    margin-left: 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    font-size: 11px;
+    display: inline-grid;
+    place-items: center;
+}
+
+.notif-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(380px, calc(100vw - 24px));
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-lg);
+    z-index: 60;
+    overflow: hidden;
+}
+.notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+}
+.notif-link {
+    font-size: 12.5px;
+    color: var(--link);
+    font-weight: 600;
+}
+.notif-link:disabled {
+    color: var(--faint);
+    cursor: default;
+}
+.notif-list {
+    max-height: min(420px, 60dvh);
+    overflow-y: auto;
+}
+.notif-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+    color: var(--muted);
+    font-size: 13.5px;
+}
+.notif-foot {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--link);
+}
+.notif-foot:hover {
+    background: var(--hover);
+}
+
+.notif-item {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+}
+.notif-item:last-child {
+    border-bottom: 0;
+}
+.notif-item.unread {
+    background: var(--brand-soft);
+}
+.notif-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: left;
+    color: inherit;
+}
+.notif-item:hover {
+    background: var(--hover);
+}
+.n-ic {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+}
+.n-ic.green {
+    background: var(--brand-soft);
+    color: var(--brand-text);
+    border: 1px solid var(--brand-line);
+}
+.n-ic.blue {
+    background: var(--info-soft);
+    color: var(--info);
+    border: 1px solid var(--info-line);
+}
+.n-ic.amber {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid var(--warn-line);
+}
+.n-ic.red {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger-line);
+}
+.n-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.n-text b {
+    font-size: 13.5px;
+    color: var(--ink);
+}
+.n-body {
+    font-size: 13px;
+    color: var(--ink-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.n-text small {
+    color: var(--muted);
+    font-size: 12px;
+}
+.n-dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.notif-del {
+    align-self: center;
+    margin-right: 8px;
+    width: 30px;
+    height: 30px;
+    flex: none;
+}
+.notif-page-list {
+    display: flex;
+    flex-direction: column;
+}
+/* ছোট স্ক্রিনে panel টা পুরো প্রস্থে, স্ক্রিনের বাইরে যাবে না */
+@media (max-width: 600px) {
+    .notif-panel {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        top: calc(56px + env(safe-area-inset-top) + 6px);
+    }
+}
