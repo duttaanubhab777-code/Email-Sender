@@ -109,6 +109,7 @@ const buildPayload = (n, badge) => {
     };
 };
 
+// একটা ডিভাইসে পাঠায়। ফেরত দেয়: { ok, status, gone, message } — কেন ব্যর্থ হলো সেটাও জানা যায়
 const sendOne = async (sub, payload, alert) => {
     try {
         await wp.sendNotification(
@@ -116,25 +117,32 @@ const sendOne = async (sub, payload, alert) => {
             JSON.stringify(payload),
             { TTL: alert ? 172800 : 21600, urgency: alert ? "high" : "normal" }
         );
-        return true;
+        return { ok: true, status: 201, gone: false, message: "" };
     } catch (error) {
+        const status = error?.statusCode || 0;
         // ডিভাইস আর নেই (অ্যাপ মুছে ফেলা / permission বন্ধ) — তালিকা থেকে সরিয়ে দেওয়া
-        if (error?.statusCode === 404 || error?.statusCode === 410) {
+        const gone = status === 404 || status === 410;
+        if (gone) {
             await PushSubscription.deleteOne({ _id: sub._id }).catch(() => {});
         } else {
-            console.error("[push] send failed:", error?.statusCode || "", error?.message);
+            console.error("[push] send failed:", status || "", error?.body || error?.message);
         }
-        return false;
+        return {
+            ok: false,
+            status,
+            gone,
+            message: String(error?.body || error?.message || "Unknown error").slice(0, 200)
+        };
     }
 };
 
+// সব ফলাফলের তালিকা ফেরত দেয় (সফল + ব্যর্থ)
 const inBatches = async (items, size, fn) => {
-    let ok = 0;
+    const out = [];
     for (let i = 0; i < items.length; i += size) {
-        const res = await Promise.all(items.slice(i, i + size).map(fn));
-        ok += res.filter(Boolean).length;
+        out.push(...(await Promise.all(items.slice(i, i + size).map(fn))));
     }
-    return ok;
+    return out;
 };
 
 // তৈরি হওয়া Notification গুলোর প্রতিটা ডিভাইসে push পাঠায়। ফেরত দেয়: কতগুলো ডিভাইসে পৌঁছাল
@@ -166,7 +174,8 @@ export const pushNotifications = async docs => {
             const badge = unread.get(String(sub.user)) || 0;
             for (const n of mine) jobs.push({ sub, payload: buildPayload(n, badge), alert: n.alert });
         }
-        return await inBatches(jobs, 25, j => sendOne(j.sub, j.payload, j.alert));
+        const results = await inBatches(jobs, 25, j => sendOne(j.sub, j.payload, j.alert));
+        return results.filter(r => r.ok).length;
     } catch (error) {
         console.error("[push] failed:", error.message);
         return 0;
@@ -174,18 +183,25 @@ export const pushNotifications = async docs => {
 };
 
 // "Send test" বাটনের জন্য — database এ notification না বানিয়ে শুধু এই ইউজারের ডিভাইসগুলোতে
+// force: true মানে অ্যাপ সামনে খোলা থাকলেও notification bar এ দেখাতে হবে (test এ সবসময় তাই হয়)
 export const pushTest = async userId => {
-    if (!(await init())) return { sent: 0, devices: 0, configured: false };
+    if (!(await init())) return { sent: 0, devices: 0, configured: false, failures: [] };
     const subs = await PushSubscription.find({ user: userId }).lean();
     const payload = {
         id: `test-${Date.now()}`,
         type: "test",
         alert: false,
+        force: true,
         title: "🔔 Notifications are on",
         body: `${KIND.test[1]}\nYou'll now see new emails, approvals and admin notices here.`,
         url: "/notifications",
         ts: Date.now()
     };
-    const sent = await inBatches(subs, 10, s => sendOne(s, payload, false));
-    return { sent, devices: subs.length, configured: true };
+    const results = await inBatches(subs, 10, s => sendOne(s, payload, false));
+    return {
+        sent: results.filter(r => r.ok).length,
+        devices: subs.length,
+        configured: true,
+        failures: results.filter(r => !r.ok).map(r => ({ status: r.status, gone: r.gone, message: r.message }))
+    };
 };

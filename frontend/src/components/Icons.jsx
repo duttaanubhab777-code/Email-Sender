@@ -219,6 +219,26 @@ const P = {
             <circle cx="12" cy="12" r="1" />
             <circle cx="19" cy="12" r="1" />
         </>
+    ),
+    download: (
+        <>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M12 15V3" />
+        </>
+    ),
+    reply: (
+        <>
+            <path d="m9 17-5-5 5-5" />
+            <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+        </>
+    ),
+    hash: <path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />,
+    fileText: (
+        <>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+        </>
     )
 };
 

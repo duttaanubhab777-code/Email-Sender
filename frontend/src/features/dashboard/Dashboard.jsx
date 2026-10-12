@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getDashboard } from "../../services/api";
 import useAsync from "../../hooks/useAsync";
 import Icon from "../../components/Icons";
-import Drawer from "../../components/ui/Drawer";
+import EmailDetailDrawer from "../../components/ui/EmailDetail";
 import {
     Badge,
     Empty,
@@ -452,51 +452,23 @@ export default function Dashboard() {
                 )}
             </section>
 
-            <Drawer
-                open={!!open}
+            <EmailDetailDrawer
                 onClose={() => setOpen(null)}
-                title="Email details"
-            >
-                {open && (
-                    <>
-                        <div className="row-wrap">
-                            <Badge
-                                tone={open.status === "sent" ? "green" : "red"}
-                                dot
-                            >
-                                {open.status === "sent" ? "Sent" : "Failed"}
-                            </Badge>
-                            <span className="muted">
-                                {fmtDateTime(open.createdAt)}
-                            </span>
-                        </div>
-                        <h3 style={{ fontSize: 18 }}>
-                            {open.subject || "(no subject)"}
-                        </h3>
-                        <dl className="dl">
-                            <dt>From</dt>
-                            <dd>
-                                {open.senderName}{" "}
-                                <span className="muted">
-                                    &lt;{open.senderEmail}&gt;
-                                </span>
-                            </dd>
-                            <dt>Delivered to</dt>
-                            <dd>{open.receiverEmail}</dd>
-                            <dt>API key</dt>
-                            <dd>{keyName(open.apiKey)}</dd>
-                            <dt>Sender IP</dt>
-                            <dd className="mono">{open.ipAddress || "—"}</dd>
-                        </dl>
-                        <div>
-                            <div className="label" style={{ marginBottom: 8 }}>
-                                Message
-                            </div>
-                            <div className="msg-box">{open.message}</div>
-                        </div>
-                    </>
-                )}
-            </Drawer>
+                m={
+                    open && {
+                        id: open._id,
+                        subject: open.subject,
+                        status: open.status,
+                        createdAt: open.createdAt,
+                        senderName: open.senderName,
+                        senderEmail: open.senderEmail,
+                        receiverEmail: open.receiverEmail,
+                        message: open.message || "",
+                        ipAddress: open.ipAddress,
+                        apiKeyName: keyName(open.apiKey)
+                    }
+                }
+            />
         </>
     );
 }

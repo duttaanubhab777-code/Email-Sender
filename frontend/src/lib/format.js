@@ -12,6 +12,18 @@ const timeFmt = new Intl.DateTimeFormat("en-GB", {
 export const fmtDate = d => (d ? dateFmt.format(new Date(d)) : "—");
 export const fmtDateTime = d =>
     d ? `${dateFmt.format(new Date(d))}, ${timeFmt.format(new Date(d))}` : "—";
+// তারিখ + সময় সেকেন্ড সহ (email / login এর ঠিক কখন তা বোঝাতে)
+const stampFmt = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+});
+export const fmtStampFull = d => (d ? stampFmt.format(new Date(d)) : "—");
 export const fmtNum = n => Number(n || 0).toLocaleString("en-US");
 
 export function timeAgo(d) {

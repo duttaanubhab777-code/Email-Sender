@@ -1,0 +1,81 @@
+/* ---------- PWA: install banner + offline bar ---------- */
+.pwa-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--brand-line);
+    background: linear-gradient(135deg, var(--brand-soft), var(--panel) 80%);
+    box-shadow: var(--shadow-sm);
+    animation: fade 0.25s both;
+}
+.pwa-ic {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--brand);
+    color: var(--brand-ink);
+    box-shadow: 0 6px 16px rgba(0, 237, 100, 0.28);
+}
+.pwa-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-2);
+}
+.pwa-text > b {
+    display: block;
+    color: var(--ink);
+    font-size: 14.5px;
+    margin-bottom: 1px;
+}
+.pwa-steps {
+    margin: 6px 0 0 18px;
+    padding: 0;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+.pwa-actions {
+    display: flex;
+    gap: 8px;
+    flex: none;
+}
+.pwa-net {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 9px 14px;
+    border-radius: var(--r);
+    font-size: 13px;
+    font-weight: 500;
+    animation: fade 0.2s both;
+}
+.pwa-net.off {
+    background: var(--warn-soft);
+    border: 1px solid var(--warn-line);
+    color: var(--warn);
+}
+.pwa-net.ok {
+    background: var(--brand-soft);
+    border: 1px solid var(--brand-line);
+    color: var(--brand-text);
+}
+@media (max-width: 640px) {
+    .pwa-banner {
+        flex-wrap: wrap;
+    }
+    .pwa-actions {
+        width: 100%;
+    }
+    .pwa-actions .btn {
+        flex: 1;
+        height: 40px;
+    }
+}

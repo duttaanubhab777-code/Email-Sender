@@ -8,8 +8,12 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Email Sender" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="application-name" content="Email Sender" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="Email Sender — a contact form API. Receive form messages straight in your inbox, with approvals, notifications and admin tools." />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#07080d" />
+    <meta name="theme-color" content="#071319" />
     <title>Email Sender — Contact form API</title>
     <script>
       // থিম ফ্ল্যাশ আটকাতে পেজ আঁকার আগেই থিম বসানো
@@ -18,12 +22,13 @@
           var t = localStorage.getItem("es-theme");
           if (t !== "light" && t !== "dark") t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
           document.documentElement.setAttribute("data-theme", t);
-          if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f3faf7");
+          if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f5f7f6");
         } catch (e) {}
       })();
     </script>
   </head>
   <body>
+    <noscript>Email Sender needs JavaScript to run. Please enable it and reload.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

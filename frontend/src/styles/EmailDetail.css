@@ -1,0 +1,306 @@
+/* ---------- Email details (user dashboard + admin) ---------- */
+.ed {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fade 0.25s both;
+}
+.ed-h {
+    margin: 0 0 8px 2px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+
+/* hero */
+.ed-hero {
+    padding: 18px;
+    border: 1px solid var(--brand-line);
+    border-radius: var(--r-lg);
+    background: linear-gradient(150deg, var(--brand-soft), var(--panel) 65%);
+}
+.ed-hero.failed {
+    border-color: var(--danger-line);
+    background: linear-gradient(150deg, var(--danger-soft), var(--panel) 65%);
+}
+.ed-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px 4px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand-text);
+    background: var(--panel);
+    border: 1px solid var(--brand-line);
+}
+.ed-status.failed {
+    color: var(--danger);
+    border-color: var(--danger-line);
+}
+.ed-subject {
+    margin: 12px 0 8px;
+    font-size: 21px;
+    line-height: 1.28;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+}
+.ed-when {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.ed-when span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* sender / owner */
+.ed-person,
+.ed-owner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--panel);
+}
+.ed-avatar {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+.ed-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.ed-meta small {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+.ed-meta b {
+    font-size: 15px;
+}
+.ed-mail {
+    font-size: 13px;
+    color: var(--link);
+    text-decoration: none;
+}
+.ed-mail:hover {
+    text-decoration: underline;
+}
+.ed-sub {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* message */
+.ed-card {
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--panel);
+    overflow: hidden;
+}
+.ed-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 8px 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+}
+.ed-card-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.ed-msg {
+    padding: 16px;
+    max-height: min(44vh, 420px);
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+}
+.ed-msg-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 9px 14px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    font-size: 12px;
+    color: var(--faint);
+}
+
+/* route */
+.ed-flow {
+    list-style: none;
+    padding: 4px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--panel);
+}
+.ed-flow li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 12px;
+    padding: 12px 0;
+    min-width: 0;
+}
+.ed-flow li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 46px;
+    bottom: -12px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    opacity: 0.55;
+}
+.ed-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--brand-text);
+    background: var(--brand-soft);
+    border: 1px solid var(--brand-line);
+}
+.ed-dot.bad {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-color: var(--danger-line);
+}
+.ed-flow li > div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    justify-content: center;
+}
+.ed-flow small {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+.ed-flow b {
+    font-size: 14.5px;
+    overflow-wrap: anywhere;
+}
+
+/* technical tiles */
+.ed-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.ed-tile {
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--panel);
+}
+.ed-tile.wide {
+    grid-column: 1 / -1;
+}
+.ed-k {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+.ed-v {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
+}
+.ed-v-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* copy icon button */
+.ed-copy {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        color 0.15s;
+}
+.ed-copy:hover {
+    background: var(--hover);
+    color: var(--ink);
+}
+.ed-copy:active {
+    transform: scale(0.94);
+}
+
+/* footer buttons (drawer-foot) */
+.drawer-foot a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    text-decoration: none;
+}
+
+@media (max-width: 640px) {
+    .ed-subject {
+        font-size: 19px;
+    }
+    .ed-msg {
+        font-size: 15.5px;
+    }
+}

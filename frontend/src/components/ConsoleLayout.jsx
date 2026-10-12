@@ -9,6 +9,7 @@ import ThemeToggle from "./ThemeToggle";
 import NotificationBell from "./NotificationBell";
 import { NotificationProvider, useNotifications } from "../context/NotificationContext";
 import { PushPrompt } from "./PushControls";
+import { InstallMenuItem, InstallPrompt, OfflineBar } from "./InstallApp";
 import { Brand } from "./Logo";
 import { RoleBadge } from "./ui/Bits";
 
@@ -249,6 +250,7 @@ function ConsoleShell() {
                                         <Icon name="activity" size={16} />{" "}
                                         System status
                                     </NavLink>
+                                    <InstallMenuItem onDone={() => setMenuOpen(false)} />
                                     <button
                                         className="menu-item danger"
                                         onClick={handleLogout}
@@ -263,6 +265,8 @@ function ConsoleShell() {
                 </header>
 
                 <main className="content">
+                    <OfflineBar />
+                    <InstallPrompt />
                     <PushPrompt />
                     {isAdmin && isAdminPath(pathname) && (
                         <div className="admin-tabs tabs" role="tablist">

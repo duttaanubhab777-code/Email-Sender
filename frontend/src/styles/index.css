@@ -1141,9 +1141,30 @@ code,
     padding: 16px 20px;
     border-bottom: 1px solid var(--line);
 }
-.drawer-head h3 {
-    font-size: 16px;
+.drawer-title {
     flex: 1;
+    min-width: 0;
+}
+.drawer-title h3 {
+    font-size: 16px;
+}
+.drawer-title small {
+    display: block;
+    margin-top: 1px;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+.drawer-foot {
+    display: flex;
+    gap: 10px;
+    padding: 12px 20px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+}
+.drawer-foot .btn {
+    flex: 1;
+    height: 42px;
 }
 .drawer-body {
     padding: 20px;

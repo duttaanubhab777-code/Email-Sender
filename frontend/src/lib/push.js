@@ -22,7 +22,10 @@ export const needsInstall = () => isIOS() && !isStandalone();
 export async function registerSW() {
     if (!("serviceWorker" in navigator)) return null;
     try {
-        return await navigator.serviceWorker.register("/sw.js");
+        return await navigator.serviceWorker.register("/sw.js", {
+            scope: "/",
+            updateViaCache: "none" // sw.js নিজে কখনো পুরনো cache থেকে আসবে না — আপডেট সাথে সাথে পৌঁছায়
+        });
     } catch {
         return null;
     }

@@ -1,10 +1,114 @@
 /* Email Sender — service worker
-   শুধু push notification এর জন্য (কোনো cache/offline নেই, তাই পুরনো ফাইল আটকে থাকার ভয় নেই)।
-   ফোনের notification bar এ লোগো + কী হয়েছে + কেন এসেছে — সব এখান থেকেই দেখানো হয়। */
+   ১) PWA: অ্যাপ হিসেবে install + offline হলে সুন্দর fallback পেজ + দ্রুত লোডের জন্য static ফাইল cache
+   ২) Push: ফোনের notification bar এ লোগো + কী হয়েছে + কেন এসেছে
 
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
+   নিরাপদ cache নিয়ম:
+   - API (অন্য origin / non-GET) কখনো cache হয় না
+   - পেজ (index.html) সবসময় আগে network থেকে, তাই পুরনো ভার্সন আটকে থাকে না
+   - শুধু hashed /assets/* আর আইকন/ফন্ট cache হয় */
 
+const VERSION = "v2";
+const STATIC_CACHE = `es-static-${VERSION}`;
+const OFFLINE_URL = "/offline.html";
+const PRECACHE = [
+    OFFLINE_URL,
+    "/manifest.webmanifest",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/favicon.png",
+    "/favicon.svg",
+    "/notif-icon.png",
+    "/notif-badge.png"
+];
+
+self.addEventListener("install", event => {
+    event.waitUntil(
+        (async () => {
+            const cache = await caches.open(STATIC_CACHE);
+            // একটা ফাইল না পেলেও install আটকাবে না
+            await Promise.all(PRECACHE.map(u => cache.add(u).catch(() => {})));
+            await self.skipWaiting();
+        })()
+    );
+});
+
+self.addEventListener("activate", event => {
+    event.waitUntil(
+        (async () => {
+            const keys = await caches.keys();
+            await Promise.all(
+                keys.filter(k => k.startsWith("es-static-") && k !== STATIC_CACHE).map(k => caches.delete(k))
+            );
+            if (self.registration.navigationPreload) {
+                await self.registration.navigationPreload.enable().catch(() => {});
+            }
+            await self.clients.claim();
+        })()
+    );
+});
+
+self.addEventListener("message", event => {
+    if (event.data?.type === "es:skip-waiting") self.skipWaiting();
+});
+
+// ---------- fetch ----------
+const isStaticAsset = url =>
+    url.pathname.startsWith("/assets/") ||
+    /\.(?:png|svg|jpg|jpeg|webp|ico|woff2?|ttf)$/i.test(url.pathname);
+
+self.addEventListener("fetch", event => {
+    const req = event.request;
+    if (req.method !== "GET") return;
+
+    const url = new URL(req.url);
+    if (url.origin !== self.location.origin) return; // API অন্য origin এ — একদম ছোঁয়া হয় না
+    if (req.headers.has("range")) return;
+
+    // পেজ খোলা: network আগে; offline হলে offline.html
+    if (req.mode === "navigate") {
+        event.respondWith(
+            (async () => {
+                try {
+                    const preload = await event.preloadResponse;
+                    return preload || (await fetch(req));
+                } catch {
+                    const cache = await caches.open(STATIC_CACHE);
+                    return (
+                        (await cache.match(OFFLINE_URL)) ||
+                        new Response("You're offline.", {
+                            status: 503,
+                            headers: { "Content-Type": "text/plain; charset=utf-8" }
+                        })
+                    );
+                }
+            })()
+        );
+        return;
+    }
+
+    // static ফাইল: cache থেকে সাথে সাথে, পেছনে নতুনটা এনে রাখা (stale-while-revalidate)
+    if (isStaticAsset(url)) {
+        event.respondWith(
+            (async () => {
+                const cache = await caches.open(STATIC_CACHE);
+                const hit = await cache.match(req);
+                const fresh = fetch(req)
+                    .then(res => {
+                        if (res && res.ok && res.type === "basic") cache.put(req, res.clone());
+                        return res;
+                    })
+                    .catch(() => null);
+                if (hit) {
+                    event.waitUntil(fresh);
+                    return hit;
+                }
+                return (await fresh) || Response.error();
+            })()
+        );
+    }
+});
+
+// ---------- push ----------
 const setBadge = async count => {
     try {
         const n = Number(count);
@@ -25,17 +129,8 @@ async function handlePush(d) {
     // খোলা app কে জানানো — সাথে সাথে bell/ব্যাজ/পপআপ আপডেট হবে
     wins.forEach(w => w.postMessage({ type: "es:push", payload: d }));
 
-    // app এখন সামনেই খোলা থাকলে সাধারণ notification এ আলাদা OS banner লাগে না।
-    // (Apple এ প্রতিটা push এ notification দেখানো বাধ্যতামূলক, আর admin notice সবসময় দেখানো হয়)
-    const apple = /iPhone|iPad|iPod|Macintosh/i.test(
-        self.navigator?.userAgent || ""
-    );
-    const inFront = wins.some(w => w.visibilityState === "visible" && w.focused);
-    if (inFront && !d.alert && !apple) {
-        await setBadge(d.badge);
-        return;
-    }
-
+    // আগে অ্যাপ সামনে খোলা থাকলে notification লুকানো হতো — তাই "Send test" চাপলে কিছুই আসত না
+    // (test সবসময় অ্যাপ খোলা অবস্থাতেই চাপা হয়)। এখন সবসময় notification bar এ দেখানো হয়।
     await self.registration.showNotification(d.title || "Email Sender", {
         body: d.body || "",
         icon: "/notif-icon.png", // বড় লোগো (notification এর বাঁ পাশে)

@@ -8,7 +8,7 @@ import {
 import useAsync from "../../hooks/useAsync";
 import Avatar from "../../components/Avatar";
 import Icon from "../../components/Icons";
-import Drawer from "../../components/ui/Drawer";
+import EmailDetailDrawer from "../../components/ui/EmailDetail";
 import {
     Badge,
     Callout,
@@ -249,13 +249,24 @@ export default function AdminDirectory() {
                     )}
                 </section>
 
-                <Drawer
-                    open={!!open}
+                <EmailDetailDrawer
                     onClose={() => setOpen(null)}
-                    title="Email details"
-                >
-                    {open && <EmailDetail m={open} />}
-                </Drawer>
+                    m={
+                        open && {
+                            id: open._id,
+                            subject: open.subject,
+                            status: open.status,
+                            createdAt: open.createdAt,
+                            senderName: open.senderName,
+                            senderEmail: open.senderEmail,
+                            receiverEmail: open.receiverEmail,
+                            message: open.message || "",
+                            ipAddress: open.ipAddress,
+                            apiKeyName: open.apiKeyName,
+                            owner: open.owner || null
+                        }
+                    }
+                />
 
                 {tab === "logins" && (
                     <p className="muted" style={{ fontSize: 12.5 }}>
@@ -485,51 +496,5 @@ function EmailTable({ items, onOpen }) {
                 </tbody>
             </table>
         </div>
-    );
-}
-
-// একটা email এর পুরো বিবরণ (user এর নিজের dashboard এর মতো, সাথে কার account এ এসেছে)
-function EmailDetail({ m }) {
-    return (
-        <>
-            <div className="row-wrap">
-                <Badge tone={m.status === "sent" ? "green" : "red"} dot>
-                    {m.status === "sent" ? "Sent" : "Failed"}
-                </Badge>
-                <span className="muted">{fmtStamp(m.createdAt)}</span>
-            </div>
-            <h3 style={{ fontSize: 18 }}>{m.subject || "(no subject)"}</h3>
-            <dl className="dl">
-                <dt>From</dt>
-                <dd>
-                    {m.senderName}{" "}
-                    <span className="muted">&lt;{m.senderEmail}&gt;</span>
-                </dd>
-                <dt>Delivered to</dt>
-                <dd>{m.receiverEmail}</dd>
-                <dt>Account</dt>
-                <dd>
-                    {m.owner ? (
-                        <>
-                            {m.owner.fullName}{" "}
-                            <span className="muted">@{m.owner.username}</span>
-                        </>
-                    ) : (
-                        "Deleted user"
-                    )}
-                </dd>
-                <dt>API key</dt>
-                <dd>{m.apiKeyName}</dd>
-                <dt>Sender IP</dt>
-                <dd className="mono">{m.ipAddress || "—"}</dd>
-            </dl>
-            <div>
-                <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-                    <div className="label">Message</div>
-                    <CopyButton text={m.message} label="Copy" successMsg="Message copied" />
-                </div>
-                <div className="msg-box">{m.message}</div>
-            </div>
-        </>
     );
 }

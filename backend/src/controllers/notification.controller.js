@@ -167,6 +167,20 @@ const sendTestPush = asyncHandler(async (req, res) => {
     if (!r.devices) {
         throw new ApiError(404, "No device is subscribed yet. Turn on phone notifications first.");
     }
+    // আগে এখানে devices থাকলেই "সফল" বলা হতো — পাঠানো আসলে ব্যর্থ হলেও। এখন সত্যিটা জানানো হয়
+    if (!r.sent) {
+        const f = r.failures[0];
+        if (f?.gone) {
+            throw new ApiError(
+                410,
+                "This device's notification subscription has expired. Turn notifications off, then on again."
+            );
+        }
+        throw new ApiError(
+            502,
+            `The push service didn't accept the test (${f?.status || "no response"}). Check the backend terminal for "[push] send failed".`
+        );
+    }
     return res.status(200).json(new ApiResponse(200, r, "Test notification sent"));
 });
 
