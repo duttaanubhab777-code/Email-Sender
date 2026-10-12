@@ -226,6 +226,30 @@ export const markAllNotificationsRead = () =>
     request("/notifications/read-all", { method: "PATCH" });
 export const deleteNotification = id =>
     request(`/notifications/${id}`, { method: "DELETE" });
+// Admin এর গুরুত্বপূর্ণ নোটিশ (পপআপ): বাকি গুলো আনা + "OK" চাপা
+export const getPendingAlerts = signal =>
+    request("/notifications/alerts/pending", { signal });
+export const ackNotification = id =>
+    request(`/notifications/${id}/ack`, { method: "PATCH" });
+// ফোনের notification bar (Web Push)
+export const getPushConfig = () => request("/notifications/push/config");
+export const subscribePush = subscription =>
+    request("/notifications/push/subscribe", {
+        method: "POST",
+        body: subscription
+    });
+export const unsubscribePush = endpoint =>
+    request("/notifications/push/unsubscribe", {
+        method: "POST",
+        body: { endpoint }
+    });
+export const sendTestPush = () =>
+    request("/notifications/push/test", { method: "POST" });
+// Admin: নোটিশ পাঠানো + আগের নোটিশের তালিকা
+export const sendBroadcast = body =>
+    request("/admin/broadcast", { method: "POST", body });
+export const getBroadcasts = signal =>
+    request("/admin/broadcast", { signal });
 export const setUserBlocked = (id, isBlocked, approvalId) =>
     request(`/admin/users/${id}/block`, {
         method: "PATCH",

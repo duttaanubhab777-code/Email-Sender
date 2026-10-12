@@ -17,7 +17,8 @@ const META = {
     user_unblocked: { icon: "unlock", tone: "green" },
     user_deleted: { icon: "trash", tone: "red" },
     admin_added: { icon: "crown", tone: "blue" },
-    role_changed: { icon: "shield", tone: "amber" }
+    role_changed: { icon: "shield", tone: "amber" },
+    admin_alert: { icon: "megaphone", tone: "amber" }
 };
 
 export default function NotificationItem({ n, onOpen, onDelete }) {
@@ -30,6 +31,7 @@ export default function NotificationItem({ n, onOpen, onDelete }) {
                     <Icon name={meta.icon} size={17} />
                 </span>
                 <span className="n-text">
+                    {n.alert && <span className="n-tag">Admin notice</span>}
                     <b>{n.title}</b>
                     {n.body && <span className="n-body">{n.body}</span>}
                     <small>{timeAgo(n.createdAt)}</small>

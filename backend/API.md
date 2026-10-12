@@ -53,17 +53,35 @@ Countdown শুরু হলে cancel করার কোনো route নে�
 
 ## Notifications (`/api/v1/notifications`) — লগইন করা যেকোনো ইউজার (শুধু নিজের)
 - GET / ?filter=all|unread&page=&limit= → `{items, total, unreadCount, page, limit, totalPages}`
-- GET /unread-count → `{unreadCount}` (ঘণ্টার ব্যাজ)
+- GET /unread-count → `{unreadCount, pendingAlerts}` (ঘণ্টার ব্যাজ + পপআপে দেখানোর বাকি Admin নোটিশ)
 - PATCH /read-all — সব পড়া হয়েছে চিহ্নিত
 - PATCH /:id/read — একটা পড়া হয়েছে চিহ্নিত
 - DELETE /:id — একটা মুছে ফেলা
 কখন তৈরি হয়: email এলে (key এর মালিক + সব Admin), approval চাওয়া হলে (Super Admin), approve/deny হলে (যে চেয়েছে), নতুন ইউজার এলে (Admin), ইউজার block/unblock/delete হলে (অন্য Admin), Admin বানানো/সরানো হলে, API key তৈরি/মোছা, password বদলালে। ৬০ দিন পর নিজে থেকেই মুছে যায়।
 
+### Admin নোটিশ পপআপ (`alert: true` notification)
+- GET /alerts/pending → `{items}` — যেসব নোটিশে ইউজার এখনো পপআপে OK চাপেনি (পুরনোটা আগে, সর্বোচ্চ ১০)
+- PATCH /:id/ack — OK চাপা হয়েছে (পড়া + স্বীকৃত দুটোই চিহ্নিত হয়, পপআপ আর আসে না)
+
+### ফোনের notification bar (Web Push, VAPID)
+- GET /push/config → `{enabled, publicKey}`
+- POST /push/subscribe — body: browser এর `PushSubscription.toJSON()` (`{endpoint, keys:{p256dh, auth}}`)। endpoint শুধু পরিচিত push service এর (FCM, Mozilla, Apple, Windows) হতে হবে
+- POST /push/unsubscribe — body: `{endpoint}` (logout / বন্ধ করার সময়, যাতে একই ফোনে অন্য ইউজার ঢুকলে আগের জনের notification না আসে)
+- POST /push/test — নিজের সব ডিভাইসে টেস্ট notification (১০ মিনিটে ৫ বার)
+প্রতিটা notification তৈরি হলেই (email, approval, ইত্যাদি) সেই ইউজারের সব ডিভাইসে নিজে থেকে push যায়, লোগো + কী হয়েছে + কেন এসেছে সহ। `.env` তে VAPID key না থাকলে শুধু push বন্ধ থাকে, বাকি সব চলে।
+
+## Admin: গুরুত্বপূর্ণ নোটিশ পাঠানো (`/api/v1/admin/broadcast`) — Admin + Super Admin দুজনেই সরাসরি (approval লাগে না)
+- POST /broadcast — body: `{audience: "users"|"everyone"|"admins"|"user", targetEmail?, title (৩–৮০), message (৩–৫০০)}`
+  → প্রাপক পায়: bell notification + ফোনের notification bar + screen এ ৫ সেকেন্ডের পপআপ (OK চাপা পর্যন্ত থাকে)। block করা ইউজার ও প্রেরক নিজে বাদ। ঘণ্টায় ২০টা পর্যন্ত
+  → `201 {_id, title, message, audience, recipientCount, pushSent, ...}`
+- GET /broadcast?limit= → `{items:[{..., recipientCount, pushSent, acknowledged}]}` — আগের নোটিশ, কতজন পেল, কতজন OK চাপল
+এই পপআপ **শুধু** Admin এর পাঠানো নোটিশেই আসে; সাধারণ notification এ আসে না।
+
 ## Kill switch এর পরে স্বয়ংক্রিয় recovery
 `dropDatabase` এর পর server নিজেই সব collection + index আবার বানায় (`prepareDatabase`), rate-limit ও mail connection রিসেট করে, তারপরেই সাইট খোলে। হাতে restart লাগে না। server চালু হওয়ার সময়ও একই কাজ হয়, তাই fresh database এ deploy করলেও আলাদা কিছু করতে হয় না।
 
 ## নতুন .env — `.env.example` দেখুন
-KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_SECONDS, OTP_SECRET, TRUST_PROXY
+KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_SECONDS, OTP_SECRET, TRUST_PROXY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 
 ## অন্যান্য ফিক্স
 - cloudinary.js: `deleteFromCloudinary` ভুলভাবে ভিতরে ঢুকে ছিল (export এ error হতো) — ঠিক করা হয়েছে

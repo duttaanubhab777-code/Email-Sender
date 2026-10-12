@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAsync from "../../hooks/useAsync";
 import Icon from "../../components/Icons";
 import NotificationItem from "../../components/NotificationItem";
+import { PushCard } from "../../components/PushControls";
 import { Empty, ErrorState, PageHead, Skeleton } from "../../components/ui/Bits";
 import { useNotifications } from "../../context/NotificationContext";
 import { useToast } from "../../components/Toast";
@@ -70,6 +71,8 @@ export default function Notifications() {
                     <Icon name="check" size={15} /> Mark all as read
                 </button>
             </PageHead>
+
+            <PushCard />
 
             <section className="card">
                 <div className="tabs" role="tablist" style={{ padding: "0 8px" }}>

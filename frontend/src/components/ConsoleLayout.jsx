@@ -8,6 +8,7 @@ import Icon from "./Icons";
 import ThemeToggle from "./ThemeToggle";
 import NotificationBell from "./NotificationBell";
 import { NotificationProvider, useNotifications } from "../context/NotificationContext";
+import { PushPrompt } from "./PushControls";
 import { Brand } from "./Logo";
 import { RoleBadge } from "./ui/Bits";
 
@@ -27,6 +28,7 @@ const ADMIN = [
     { to: "/admin/stats", label: "Overview", icon: "grid" },
     { to: "/admin/users", label: "Users", icon: "users" },
     { to: "/admin/directory", label: "Keys & logins", icon: "database" },
+    { to: "/admin/broadcast", label: "Broadcast", icon: "megaphone" },
     { to: "/admin/create-admin", label: "Create admin", icon: "userPlus" },
     { to: "/approvals", label: "Approvals", icon: "shieldCheck", badge: true },
     { to: "/kill-switch", label: "Kill switch", icon: "power", kill: true }
@@ -40,6 +42,7 @@ const TITLES = {
     "/admin/stats": "Admin overview",
     "/admin/users": "Users",
     "/admin/directory": "Keys & logins",
+    "/admin/broadcast": "Broadcast",
     "/admin/create-admin": "Create admin",
     "/approvals": "Approvals",
     "/kill-switch": "Kill switch"
@@ -260,6 +263,7 @@ function ConsoleShell() {
                 </header>
 
                 <main className="content">
+                    <PushPrompt />
                     {isAdmin && isAdminPath(pathname) && (
                         <div className="admin-tabs tabs" role="tablist">
                             {ADMIN.map(i => (

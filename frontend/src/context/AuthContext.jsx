@@ -7,6 +7,7 @@ import {
     useState
 } from "react";
 import { getCurrentUser, loginUser, logoutUser } from "../services/api";
+import { detachDevice } from "../lib/push";
 
 const AuthContext = createContext(null);
 
@@ -49,6 +50,8 @@ export function AuthProvider({ children }) {
 
     const logout = useCallback(async () => {
         try {
+            // এই ফোন থেকে এই ইউজারের notification বন্ধ (লগআউটের পর আর আসবে না)
+            await detachDevice();
             await logoutUser();
         } finally {
             setJustLoggedOut(true);

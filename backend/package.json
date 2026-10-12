@@ -5,7 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
+        "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
+        "vapid": "web-push generate-vapid-keys"
     },
     "keywords": [],
     "author": "Anubhab Dutta",
@@ -23,7 +24,8 @@
         "mongoose": "^9.10.3",
         "mongoose-aggregate-paginate-v2": "^1.1.5",
         "multer": "^2.4.0",
-        "nodemailer": "^10.0.13"
+        "nodemailer": "^10.0.13",
+        "web-push": "^3.6.7"
     },
     "devDependencies": {
         "nodemon": "^3.1.14"

@@ -1,0 +1,15 @@
+{
+  "name": "Email Sender",
+  "short_name": "Email Sender",
+  "description": "Contact form API — emails, approvals and admin notices.",
+  "start_url": "/users/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071319",
+  "theme_color": "#071319",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
