@@ -171,24 +171,27 @@ const OTP_TITLES = {
     [OTP_PURPOSES.KILL_SWITCH]: "Kill switch confirmation"
 };
 
-export const sendOtpEmail = ({ to, code, purpose, minutes }) =>
-    sendMail({
-        to,
-        subject: `${code} is your Email Sender code`,
-        html: shell(
-            OTP_TITLES[purpose] || "Verification code",
-            `<p style="margin:0 0 16px;">Use this code to continue:</p>
+export const buildOtpMail = ({ code, purpose, minutes }) => ({
+    subject: `${code} is your Email Sender code`,
+    html: shell(
+        OTP_TITLES[purpose] || "Verification code",
+        `<p style="margin:0 0 16px;">Use this code to continue:</p>
 <div style="font-size:34px;font-weight:700;letter-spacing:10px;text-align:center;background:#27272a;border-radius:10px;padding:16px;color:#fff;">${escapeHtml(code)}</div>
 <p style="margin:16px 0 0;color:#a1a1aa;">It expires in ${minutes} minutes. Never share this code with anyone. If you didn't request it, ignore this email.</p>`
-        )
-    });
+    )
+});
+
+export const buildNotificationMail = ({ subject, heading, lines }) => ({
+    subject,
+    html: shell(
+        heading,
+        lines.map(l => `<p style="margin:0 0 10px;">${escapeHtml(l)}</p>`).join("")
+    )
+});
+
+// সরাসরি (কিউ ছাড়া) পাঠানো — এখন সাধারণত ব্যবহার হয় না; OTP/notification যায় mailQueue.service.js দিয়ে
+export const sendOtpEmail = ({ to, code, purpose, minutes }) =>
+    sendMail({ to, ...buildOtpMail({ code, purpose, minutes }) });
 
 export const sendNotificationEmail = ({ to, subject, heading, lines }) =>
-    sendMail({
-        to,
-        subject,
-        html: shell(
-            heading,
-            lines.map(l => `<p style="margin:0 0 10px;">${escapeHtml(l)}</p>`).join("")
-        )
-    });
+    sendMail({ to, ...buildNotificationMail({ subject, heading, lines }) });

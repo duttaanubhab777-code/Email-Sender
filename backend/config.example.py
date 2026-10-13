@@ -5,14 +5,13 @@
 # ⚠ config.py কখনো GitHub এ তুলো না (.gitignore এ বন্ধ করা আছে)।
 
 # যে Gmail দিয়ে ইমেইল যাবে
-GMAIL_USER = "your-gmail@gmail.com"
+GMAIL_USER = ""
 
 # Gmail App password (১৬ অক্ষর; স্পেস থাকলেও চলবে) — সাধারণ Gmail password নয়
-GMAIL_APP_PASSWORD = "abcd efgh ijkl mnop"
+GMAIL_APP_PASSWORD = ""
 
 # Render এর MAIL_RELAY_SECRET এর হুবহু একই মান। লম্বা, random, ইংরেজি অক্ষর/সংখ্যা দিয়ে বানাও (২৪+ অক্ষর)
-RELAY_SECRET = "change-this-to-a-long-random-secret"
+RELAY_SECRET = ""
 
 # --- ঐচ্ছিক ---
-# FROM_NAME = "Email Sender"      # প্রেরকের ডিফল্ট নাম
-# SMTP_MODE = "auto"              # auto = আগে 465 (SSL), না হলে 587 (STARTTLS) | "465" | "587"
+# FROM_NAME = "Email Sender"      # প্রেরকের ডিফ_MODE = "auto"              # auto = আগে 465 (SSL), না হলে 587 (STARTTLS) | "465" | "587"

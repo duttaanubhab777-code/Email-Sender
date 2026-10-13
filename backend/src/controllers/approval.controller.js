@@ -6,7 +6,7 @@ import { normEmail, isEmail } from "../utils/validators.js";
 import { User } from "../models/user.model.js";
 import { Approval } from "../models/approval.model.js";
 import { normalizeTargets } from "../services/killSwitch.service.js";
-import { sendNotificationEmail } from "../services/mailer.service.js";
+import { sendNotificationEmail } from "../services/mailQueue.service.js";
 import { notifyUser, notifyAdmins } from "../services/notification.service.js";
 import {
     EXTRA_ACTIONS,

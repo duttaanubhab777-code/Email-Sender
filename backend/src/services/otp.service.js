@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { Otp } from "../models/otp.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { sendOtpEmail } from "./mailer.service.js";
+import { queueOtpEmail } from "./mailQueue.service.js";
 import {
     OTP_EXPIRY_MINUTES,
     OTP_RESEND_COOLDOWN_SECONDS,
@@ -60,8 +60,10 @@ export const createAndSendOtp = async ({
         { upsert: true }
     );
 
+    // ইমেইল আগে DB তে pending সেভ হয়, তারপর পাঠানো হয় (সর্বোচ্চ ৮ সেকেন্ড অপেক্ষা)।
+    // relay ধীর/ঘুমন্ত থাকলেও OTP হারায় না — ব্যাকগ্রাউন্ডে retry চলে। শুধু DB তে সেভ না হলেই error।
     try {
-        await sendOtpEmail({ to: email, code, purpose, minutes: expiryMinutes });
+        await queueOtpEmail({ to: email, code, purpose, minutes: expiryMinutes });
     } catch (error) {
         await Otp.deleteOne({ email, purpose });
         throw error;
