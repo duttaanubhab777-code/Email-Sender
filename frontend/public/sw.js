@@ -63,6 +63,7 @@ self.addEventListener("fetch", event => {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) return; // API অন্য origin এ — একদম ছোঁয়া হয় না
     if (req.headers.has("range")) return;
+    if (url.pathname.startsWith("/api/")) return; // API সবসময় সরাসরি network এ
 
     // পেজ খোলা: network আগে; offline হলে offline.html
     if (req.mode === "navigate") {

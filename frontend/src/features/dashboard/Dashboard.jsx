@@ -91,7 +91,9 @@ export default function Dashboard() {
     const filtered = useMemo(() => {
         const term = q.trim().toLowerCase();
         return subs.filter(s => {
-            if (status !== "all" && s.status !== status) return false;
+            if (status === "pending") {
+                if (s.status !== "pending" && s.status !== "sending") return false;
+            } else if (status !== "all" && s.status !== status) return false;
             if (!term) return true;
             return [s.senderName, s.senderEmail, s.subject, s.message].some(v =>
                 String(v || "")
@@ -334,6 +336,7 @@ export default function Dashboard() {
                         >
                             <option value="all">All statuses</option>
                             <option value="sent">Sent</option>
+                            <option value="pending">Delivering</option>
                             <option value="failed">Failed</option>
                         </select>
                     </div>
@@ -407,13 +410,17 @@ export default function Dashboard() {
                                                     tone={
                                                         s.status === "sent"
                                                             ? "green"
-                                                            : "red"
+                                                            : s.status === "failed"
+                                                              ? "red"
+                                                              : "amber"
                                                     }
                                                     dot
                                                 >
                                                     {s.status === "sent"
                                                         ? "Sent"
-                                                        : "Failed"}
+                                                        : s.status === "failed"
+                                                          ? "Failed"
+                                                          : "Delivering"}
                                                 </Badge>
                                             </td>
                                             <td

@@ -154,6 +154,7 @@ export default function AdminDirectory() {
                             >
                                 <option value="all">All statuses</option>
                                 <option value="sent">Sent</option>
+                                <option value="pending">Delivering</option>
                                 <option value="failed">Failed</option>
                             </select>
                         )}
@@ -481,8 +482,11 @@ function EmailTable({ items, onOpen }) {
                                 )}
                             </td>
                             <td data-label="Status">
-                                <Badge tone={m.status === "sent" ? "green" : "red"} dot>
-                                    {m.status === "sent" ? "Sent" : "Failed"}
+                                <Badge
+                                    tone={m.status === "sent" ? "green" : m.status === "failed" ? "red" : "amber"}
+                                    dot
+                                >
+                                    {m.status === "sent" ? "Sent" : m.status === "failed" ? "Failed" : "Delivering"}
                                 </Badge>
                             </td>
                             <td data-label="Time" className="nowrap">

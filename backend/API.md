@@ -88,3 +88,15 @@ KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_
 - block করা user এখন login/refresh/পুরনো token কিছুতেই ঢুকতে পারবে না
 - সব error JSON আকারে আসে; update-account এ আর refreshToken ফেরত যায় না
 - `apiKey.middleware.js`: মাসিক limit এখন কাজ করে (এই মাসে পাঠানো email গুনে `user.monthlyEmailLimit` এর সাথে মেলায়), block করা মালিকের key ও বন্ধ
+
+---
+
+## Mail delivery — how `POST /api/v1/mail/send` behaves now
+
+- The message is saved to the database first, then the API answers right away with **202 Accepted**
+  (`data.status` is `"pending"`). Sending happens in the background.
+- Failed sends are retried automatically (30s, 2m, 10m, 30m, 2h, 6h, 12h — 8 attempts). Status goes
+  `pending → sending → sent`, or `failed` after the last attempt (the message always stays in the database).
+- Send a unique `submissionId` (8–64 chars: letters, digits, `_`, `-`) to make retries safe: the same id
+  never creates a second email.
+- `GET /api/v1/mail/ping` returns `204` — call it when a form opens to wake a sleeping host.

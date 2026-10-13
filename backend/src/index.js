@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { app } from "./app.js";
 import connectDB, { prepareDatabase } from "./db/index.js";
 import { initKillSwitch } from "./services/killSwitch.service.js";
+import { startMailQueue } from "./services/mailQueue.service.js";
 
 dotenv.config({
     path: "./.env"
@@ -22,6 +23,7 @@ connectDB()
         app.listen(port, () => {
             console.log(`server is running at http://localhost:${port}`);
         });
+        startMailQueue(); // পাঠানো যায়নি এমন ইমেইল নিজে নিজে আবার চেষ্টা
     })
     .catch(error => {
         console.log("MONGO db connection failed!!!", error);

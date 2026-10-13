@@ -1,3 +1,6 @@
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -5,6 +8,11 @@ import { ApiError } from "./utils/ApiError.js";
 import { killGate } from "./middlewares/killGate.middleware.js";
 
 const app = express();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// build করা frontend (npm run build)। থাকলে এই একই server-ই পুরো সাইট দেখায় — আলাদা hosting লাগে না
+const FRONTEND_DIST = path.resolve(__dirname, "../../frontend/dist");
+const HAS_FRONTEND = fs.existsSync(path.join(FRONTEND_DIST, "index.html"));
 
 // proxy এর পেছনে (Render, Railway ইত্যাদি) থাকলে .env তে TRUST_PROXY=1 দিন, নাহলে সঠিক IP পাওয়া যাবে না
 if (process.env.TRUST_PROXY) {
@@ -53,6 +61,28 @@ app.use("/api/v1/approvals", approvalRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/kill-switch", killSwitchRouter);
 app.use("/api/v1/system", systemRouter);
+
+// ---- frontend (React) একই server থেকে ----
+if (HAS_FRONTEND) {
+    app.use(
+        express.static(FRONTEND_DIST, {
+            index: false,
+            setHeaders: (res, file) => {
+                if (file.includes(`${path.sep}assets${path.sep}`)) {
+                    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+                } else {
+                    // sw.js, manifest, আইকন — নতুন deploy এর পর যেন পুরনো না আটকে থাকে
+                    res.setHeader("Cache-Control", "no-cache");
+                }
+            }
+        })
+    );
+    // /api বাদে বাকি সব GET → React router (যেমন /login, /users/dashboard এ refresh দিলেও কাজ করবে)
+    app.get(/^\/(?!api\/).*/, (req, res) => {
+        res.set("Cache-Control", "no-cache");
+        res.sendFile(path.join(FRONTEND_DIST, "index.html"));
+    });
+}
 
 // 404
 app.use((req, res) =>

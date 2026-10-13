@@ -61,11 +61,12 @@ function Tile({ icon, label, wide, copy, children }) {
 export default function EmailDetailDrawer({ m, onClose }) {
     const toast = useToast();
     const ok = m?.status === "sent";
+    const queued = m?.status === "pending" || m?.status === "sending";
 
     const summary = m
         ? [
               `Subject: ${m.subject || "(no subject)"}`,
-              `Status: ${ok ? "Sent" : "Failed"}`,
+              `Status: ${ok ? "Sent" : queued ? "Delivering" : "Failed"}`,
               `Received: ${fmtStampFull(m.createdAt)}`,
               `From: ${m.senderName} <${m.senderEmail}>`,
               `Delivered to: ${m.receiverEmail}`,
@@ -117,10 +118,10 @@ export default function EmailDetailDrawer({ m, onClose }) {
             {m && (
                 <div className="ed">
                     {/* ---- শিরোনাম + অবস্থা ---- */}
-                    <section className={`ed-hero ${ok ? "" : "failed"}`}>
-                        <span className={`ed-status ${ok ? "" : "failed"}`}>
-                            <Icon name={ok ? "checkCircle" : "xCircle"} size={14} />
-                            {ok ? "Delivered" : "Delivery failed"}
+                    <section className={`ed-hero ${ok || queued ? "" : "failed"}`}>
+                        <span className={`ed-status ${ok || queued ? "" : "failed"}`}>
+                            <Icon name={ok ? "checkCircle" : queued ? "clock" : "xCircle"} size={14} />
+                            {ok ? "Delivered" : queued ? "Delivering in background" : "Delivery failed"}
                         </span>
                         <h2 className="ed-subject">{m.subject || "(no subject)"}</h2>
                         <div className="ed-when">
@@ -194,11 +195,11 @@ export default function EmailDetailDrawer({ m, onClose }) {
                                 </div>
                             </li>
                             <li>
-                                <span className={`ed-dot ${ok ? "" : "bad"}`}>
-                                    <Icon name={ok ? "inbox" : "alert"} size={15} />
+                                <span className={`ed-dot ${ok || queued ? "" : "bad"}`}>
+                                    <Icon name={ok ? "inbox" : queued ? "clock" : "alert"} size={15} />
                                 </span>
                                 <div>
-                                    <small>{ok ? "Delivered to" : "Could not be delivered to"}</small>
+                                    <small>{ok ? "Delivered to" : queued ? "Being delivered to" : "Could not be delivered to"}</small>
                                     <b>{m.receiverEmail}</b>
                                 </div>
                             </li>
@@ -236,7 +237,7 @@ export default function EmailDetailDrawer({ m, onClose }) {
                                 <span className="mono">{m.ipAddress || "Unknown"}</span>
                             </Tile>
                             <Tile icon="activity" label="Status">
-                                {ok ? "Sent" : "Failed"}
+                                {ok ? "Sent" : queued ? "Delivering" : "Failed"}
                             </Tile>
                             <Tile icon="clock" label="Received" wide>
                                 {fmtStampFull(m.createdAt)}

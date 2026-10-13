@@ -378,6 +378,7 @@ const getAllEmails = asyncHandler(async (req, res) => {
 
     const filter = {};
     if (req.query.status === "sent" || req.query.status === "failed") filter.status = req.query.status;
+    else if (req.query.status === "pending") filter.status = { $in: ["pending", "sending"] };
     if (mongoose.isValidObjectId(req.query.userId)) filter.user = req.query.userId;
 
     if (q) {

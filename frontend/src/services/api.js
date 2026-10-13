@@ -1,5 +1,8 @@
+// production এ frontend আর backend একই server — তাই "/api/v1" (একই origin)। local এ backend আলাদা পোর্টে চলে।
+// অন্য জায়গায় backend থাকলে VITE_API_URL দিন।
 export const BASE_URL =
-    import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+    import.meta.env.VITE_API_URL ??
+    (import.meta.env.PROD ? "/api/v1" : "http://localhost:3000/api/v1");
 
 export class ApiError extends Error {
     constructor(message, status, data = null) {

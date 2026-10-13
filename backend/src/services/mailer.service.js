@@ -36,17 +36,65 @@ const shell = (heading, inner) => `<!DOCTYPE html><html><body style="margin:0;pa
 <tr><td style="padding:14px;text-align:center;background:#09090b;color:#71717a;font-size:12px;">Email Sender</td></tr>
 </table></td></tr></table></body></html>`;
 
-export const sendMail = async ({ to, subject, html }) => {
-    try {
-        await getTransporter().sendMail({
-            from: `"Email Sender" <${process.env.SMTP_USER}>`,
-            to,
+// Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই BREVO_API_KEY থাকলে HTTPS (পোর্ট 443) এ Brevo API দিয়ে
+// পাঠানো হয়; না থাকলে আগের মতো SMTP (local এ কাজ করে)।
+const FROM_EMAIL = () =>
+    (process.env.MAIL_FROM || process.env.SMTP_USER || "").trim();
+
+const cleanName = v =>
+    String(v || "Email Sender").replace(/[\r\n"<>]+/g, " ").trim().slice(0, 80) ||
+    "Email Sender";
+
+const sendViaBrevo = async ({ to, subject, html, fromName, replyTo }) => {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+            "api-key": process.env.BREVO_API_KEY.trim(),
+            "content-type": "application/json",
+            accept: "application/json"
+        },
+        body: JSON.stringify({
+            sender: { name: fromName, email: FROM_EMAIL() },
+            to: [{ email: to }],
             subject,
-            html
-        });
+            htmlContent: html,
+            ...(replyTo?.email
+                ? { replyTo: { email: replyTo.email, name: replyTo.name || undefined } }
+                : {})
+        }),
+        signal: AbortSignal.timeout(20_000)
+    });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Brevo ${res.status}: ${text.slice(0, 200)}`);
+    }
+};
+
+const sendViaSmtp = ({ to, subject, html, fromName, replyTo }) =>
+    getTransporter().sendMail({
+        from: `"${fromName}" <${FROM_EMAIL()}>`,
+        to,
+        subject,
+        html,
+        ...(replyTo?.email ? { replyTo: replyTo.email } : {})
+    });
+
+export const sendMail = async ({ to, subject, html, fromName, replyTo }) => {
+    const opts = {
+        to,
+        subject: String(subject).replace(/[\r\n]+/g, " "),
+        html,
+        fromName: cleanName(fromName),
+        replyTo
+    };
+    try {
+        if (process.env.BREVO_API_KEY?.trim()) await sendViaBrevo(opts);
+        else await sendViaSmtp(opts);
     } catch (error) {
         console.error("Mailer error:", error.message);
-        throw new ApiError(500, "Failed to send email. Please try again later.");
+        const e = new ApiError(500, "Failed to send email. Please try again later.");
+        e.cause = error.message; // queue এই কারণটা DB তে রাখে
+        throw e;
     }
 };
 

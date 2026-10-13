@@ -50,6 +50,35 @@ export const ES_JS = `(function () {
   var msg = form.querySelector(".es-msg");
   var btn = form.querySelector(".es-btn");
   var label = btn.textContent;
+  var OUTBOX = "es-outbox";
+  var RETRY = [3000, 8000, 20000, 45000, 90000];
+
+  function uid() {
+    try { return crypto.randomUUID(); } catch (e) {}
+    return "es" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+  }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(OUTBOX)) || []; } catch (e) { return []; }
+  }
+  function save(list) {
+    try { localStorage.setItem(OUTBOX, JSON.stringify(list)); } catch (e) {}
+  }
+  function drop(id) { save(load().filter(function (m) { return m.id !== id; })); }
+
+  // ফর্ম খোলা/ফোকাস হওয়া মাত্র সার্ভারকে জাগিয়ে দেয় (hosting ঘুমিয়ে থাকলে) — পূরণ শেষ হওয়ার আগেই সে তৈরি
+  var warmed = false;
+  function warm() {
+    if (warmed) return;
+    warmed = true;
+    try { fetch(form.action.replace(/send$/, "ping"), { mode: "no-cors", cache: "no-store" }); } catch (e) {}
+  }
+  form.addEventListener("focusin", warm);
+  form.addEventListener("pointerdown", warm);
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (en, ob) {
+      if (en[0].isIntersecting) { warm(); ob.disconnect(); }
+    }).observe(form);
+  }
 
   function touch(el) {
     var f = el.closest(".es-field");
@@ -60,6 +89,57 @@ export const ES_JS = `(function () {
   });
   form.addEventListener("invalid", function (e) { touch(e.target); }, true);
 
+  // একই submissionId দিয়ে বারবার পাঠানো নিরাপদ — সার্ভার duplicate ধরে ফেলে
+  function post(item) {
+    var body = typeof item.body === "string" ? new URLSearchParams(item.body) : item.body;
+    return fetch(item.action, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: body,
+      keepalive: body.toString().length < 60000
+    }).then(function (res) {
+      if (res.ok) return { ok: true };
+      // 400-403 = ফর্ম/কী ঠিক নেই, আবার চেষ্টা করে লাভ নেই
+      return { ok: false, final: res.status >= 400 && res.status <= 403, status: res.status };
+    }, function () { return { ok: false, final: false, status: 0 }; });
+  }
+
+  function deliver(item, n) {
+    return post(item).then(function (r) {
+      if (r.ok || r.final) { drop(item.id); return r; }
+      if (n >= RETRY.length) return r; // outbox এ থাকে, পরের বার পেজ খুললে আবার চেষ্টা হবে
+      return new Promise(function (ok) { setTimeout(ok, RETRY[n]); }).then(function () {
+        return deliver(item, n + 1);
+      });
+    });
+  }
+
+  // আগের বার যা পাঠানো যায়নি (ট্যাব বন্ধ/অফলাইন ছিল) পেজ খুলতেই আবার পাঠায়
+  var DAY = 24 * 3600 * 1000;
+  load().forEach(function (item) {
+    if (Date.now() - item.t > DAY) return drop(item.id);
+    if (item.action === form.action) deliver(item, 1);
+  });
+
+  function showSent() {
+    form.reset();
+    form.querySelectorAll(".touched").forEach(function (f) { f.classList.remove("touched"); });
+    form.classList.add("is-sent");
+    form.querySelector(".es-done").focus();
+  }
+  function fail(r) {
+    msg.textContent = r.status === 0 ? "Network error. Please check your connection."
+      : r.status === 429 ? "Too many messages. Please try again in a little while."
+      : r.status === 401 || r.status === 403 ? "This form is not set up correctly."
+      : "Something went wrong. Please try again.";
+    msg.classList.add("show");
+  }
+  function idle() {
+    form.classList.remove("is-busy");
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     msg.classList.remove("show");
@@ -67,34 +147,30 @@ export const ES_JS = `(function () {
     btn.disabled = true;
     btn.textContent = "Sending...";
 
-    fetch(form.action, {
-      method: "POST",
-      headers: { Accept: "application/json" },
-      body: new URLSearchParams(new FormData(form))
-    })
-      .then(function (res) {
-        if (res.ok) {
-          form.reset();
-          form.querySelectorAll(".touched").forEach(function (f) { f.classList.remove("touched"); });
-          form.classList.add("is-sent");
-          form.querySelector(".es-done").focus();
-          return;
-        }
-        throw new Error(
-          res.status === 429 ? "Monthly limit reached. Please try again later."
-          : res.status === 401 || res.status === 403 ? "This form is not set up correctly."
-          : "Something went wrong. Please try again."
-        );
-      })
-      .catch(function (err) {
-        msg.textContent = err instanceof TypeError ? "Network error. Please check your connection." : err.message;
-        msg.classList.add("show");
-      })
-      .then(function () {
-        form.classList.remove("is-busy");
-        btn.disabled = false;
-        btn.textContent = label;
-      });
+    var data = new FormData(form);
+    var id = uid();
+    data.set("submissionId", id);
+    var item = { id: id, action: form.action, body: new URLSearchParams(data), t: Date.now() };
+    // সার্ভার ঘুমন্ত থাকলে জাগতে সময় লাগতে পারে — মেসেজটা আগে ফোনে/ব্রাউজারে সুরক্ষিত রাখি
+    var list = load();
+    list.push({ id: id, action: item.action, body: item.body.toString(), t: item.t });
+    save(list);
+
+    var settled = false;
+    function finish(r) {
+      if (settled) return;
+      settled = true;
+      if (r.ok) showSent(); else fail(r);
+      idle();
+    }
+
+    // সাধারণত ১-২ সেকেন্ডেই সার্ভার সাড়া দেয়। ২.৫ সেকেন্ডে না দিলে ভিজিটরকে আটকে না রেখে
+    // "পাঠানো হয়েছে" দেখাই; আসল পাঠানো ব্যাকগ্রাউন্ডে retry সহ চলতে থাকে।
+    var timer = setTimeout(function () { finish({ ok: true }); }, 2500);
+    deliver(item, 0).then(function (r) {
+      clearTimeout(timer);
+      if (!settled) finish(r);
+    });
   });
 
   form.querySelector(".es-again").addEventListener("click", function () {
@@ -153,7 +229,9 @@ export const buildForm = ({
   </a>
 </form>`;
 
-export const endpoint = () => `${BASE_URL}/mail/send`;
+// অন্য সাইটে বসানো হবে, তাই সবসময় পুরো (absolute) URL
+export const endpoint = () =>
+    new URL(`${BASE_URL}/mail/send`, window.location.origin).href;
 
 export function buildSnippet(tab, key, theme) {
     const url = endpoint();

@@ -6,6 +6,8 @@ export const killGate = (req, res, next) => {
     if (!status.active) return next();
 
     if (req.method === "OPTIONS") return next(); // CORS preflight
+    // frontend একই server থেকে আসে: পেজ/ফাইল খোলা থাকতে হবে, নাহলে countdown দেখানোর কিছুই থাকবে না
+    if (!req.path.startsWith("/api/")) return next();
     if (req.method === "GET" && req.path === "/api/v1/system/status") return next();
 
     res.set("Retry-After", String(status.remainingSeconds));
