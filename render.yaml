@@ -28,6 +28,10 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      - key: MAIL_RELAY_URL
+        sync: false
+      - key: MAIL_RELAY_SECRET
+        sync: false
       - key: SUPER_ADMIN_EMAIL
         sync: false
       - key: CLOUDINARY_CLOUD_NAME

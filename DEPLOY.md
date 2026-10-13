@@ -3,7 +3,7 @@
 ## কী কী লাগবে (install নিজে করতে হবে না, Render build এ নিজেই হয়)
 - GitHub এ এই প্রজেক্ট (root এ `package.json` + `render.yaml` থাকবে)
 - MongoDB Atlas (free) — connection string (`MONGODB_URI`, শেষে `/` বা database নাম ছাড়া)
-- Brevo account (free) — API key + verified sender email
+- ইমেইল পাঠানোর জন্য যেকোনো একটা: Brevo (API key) অথবা Gmail relay (`backend/mail-relay.gs` — domain/ফোন verify লাগে না)
 - Cloudinary account (avatar এর জন্য)
 - cron-job.org account (free)
 

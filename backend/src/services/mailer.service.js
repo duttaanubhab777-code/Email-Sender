@@ -36,8 +36,8 @@ const shell = (heading, inner) => `<!DOCTYPE html><html><body style="margin:0;pa
 <tr><td style="padding:14px;text-align:center;background:#09090b;color:#71717a;font-size:12px;">Email Sender</td></tr>
 </table></td></tr></table></body></html>`;
 
-// Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই BREVO_API_KEY থাকলে HTTPS (পোর্ট 443) এ Brevo API দিয়ে
-// পাঠানো হয়; না থাকলে আগের মতো SMTP (local এ কাজ করে)।
+// Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই HTTPS (পোর্ট 443) এ পাঠানো হয়, অগ্রাধিকার ক্রমে:
+//   ১) BREVO_API_KEY  ২) MAIL_RELAY_URL (Google Apps Script + নিজের Gmail)  ৩) SMTP (শুধু local এ কাজ করে)
 const FROM_EMAIL = () =>
     (process.env.MAIL_FROM || process.env.SMTP_USER || "").trim();
 
@@ -70,6 +70,34 @@ const sendViaBrevo = async ({ to, subject, html, fromName, replyTo }) => {
     }
 };
 
+// Google Apps Script "relay": তোমার নিজের Gmail দিয়ে পাঠায় (domain/ফোন verify/কার্ড লাগে না)। Gmail free এ দিনে ~১০০টা।
+// backend/mail-relay.gs এর কোড script.google.com এ বসিয়ে Web app হিসেবে deploy করলে URL পাওয়া যায়।
+const sendViaRelay = async ({ to, subject, html, fromName, replyTo }) => {
+    const res = await fetch(process.env.MAIL_RELAY_URL.trim(), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+            secret: (process.env.MAIL_RELAY_SECRET || "").trim(),
+            to,
+            subject,
+            html,
+            fromName,
+            replyTo: replyTo?.email || ""
+        }),
+        signal: AbortSignal.timeout(30_000)
+    });
+    const text = await res.text();
+    let data = null;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        /* Google এর error পেজ (HTML) */
+    }
+    if (!res.ok || data?.ok !== true) {
+        throw new Error(`Relay ${res.status}: ${String(data?.error || text).slice(0, 200)}`);
+    }
+};
+
 const sendViaSmtp = ({ to, subject, html, fromName, replyTo }) =>
     getTransporter().sendMail({
         from: `"${fromName}" <${FROM_EMAIL()}>`,
@@ -89,6 +117,7 @@ export const sendMail = async ({ to, subject, html, fromName, replyTo }) => {
     };
     try {
         if (process.env.BREVO_API_KEY?.trim()) await sendViaBrevo(opts);
+        else if (process.env.MAIL_RELAY_URL?.trim()) await sendViaRelay(opts);
         else await sendViaSmtp(opts);
     } catch (error) {
         console.error("Mailer error:", error.message);
