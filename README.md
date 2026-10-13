@@ -1,81 +1,53 @@
-# 🚀 Email Sender SaaS (Production-Grade)
+# 📬 Email Sender
 
-A professional, scalable, and premium Email Sender SaaS platform built with modern web technologies. This project focuses on clean code architecture, a custom Glassmorphism UI on the frontend, and a highly secure, service-oriented Node.js/Express architecture on the backend.
+ওয়েবসাইটের Contact Form এর মেসেজ সরাসরি ইনবক্সে পাঠানোর একটা API সার্ভিস (Formspree / Web3Forms এর মতো)।
+ইউজার একটা API key বানায়, নিজের ফর্মে বসায় — ভিজিটর ফর্ম পাঠালেই মালিকের ইনবক্সে মেইল যায়।
 
-## 📌 Project Overview
-এই প্রজেক্টটির মূল লক্ষ্য হলো এমন একটি প্ল্যাটফর্ম তৈরি করা যেখান থেকে ইউজাররা API Key জেনারেট করে তাদের নিজস্ব প্রজেক্ট বা অ্যাপ্লিকেশন থেকে ইমেইল পাঠাতে পারবে। ড্যাশবোর্ডে ইউজাররা তাদের ইমেইল পাঠানোর লিমিট, API Key-এর স্ট্যাটাস এবং Usage Track করতে পারবে। 
+**Stack:** React + Vite (frontend) · Node.js + Express 5 + MongoDB (backend) · Flask relay (Gmail SMTP)
 
----
+## ✨ ফিচার
 
-## ✅ What We Have Done So Far (বর্তমান অগ্রগতি)
+- **Auth:** Register / Login / Forgot password — সবকিছুতে OTP (resend এ ৩০ সেকেন্ড অপেক্ষা), username ইমেইল থেকে নিজে ভরে
+- **API key:** তৈরি, চালু/বন্ধ, ব্যবহারের হিসাব, মাসিক ইমেইল লিমিট
+- **ফর্ম API:** `POST /api/v1/mail/send` + কপি-পেস্ট করার মতো embeddable HTML ফর্ম (dark/light)
+- **হারায় না:** মেসেজ আগে DB তে সেভ, তারপর পাঠানো; ব্যর্থ হলে নিজে আবার চেষ্টা (backoff), সার্ভার ঘুমালেও নিরাপদ
+- **Admin:** user/key/email/login history দেখা, block/delete, Super Admin permission (approval) সিস্টেম
+- **Notification:** অ্যাপের ভেতরে (unread badge) + ফোনের notification bar (Web Push) + Admin এর জরুরি alert popup
+- **Kill switch:** Super admin password → OTP → নিজস্ব password; ১০ মিনিট countdown, তারপর data মুছে নতুন করে চালু
+- **PWA:** ফোনে অ্যাপের মতো install করা যায়, offline পেজ আছে
+- **Dark / Light theme**
 
-**1. Frontend Architecture & Routing:**
-- প্রোডাকশন-রেডি **Feature-based Folder Structure** তৈরি করা হয়েছে (`src/features`, `src/app`, `src/assets`)।
-- `react-router-dom` ইনস্টল করে **SPA Routing** কনফিগার করা হয়েছে (`useNavigate` দিয়ে রিলোড-ফ্রি নেভিগেশন)।
+## 🗂 ফোল্ডার
 
-**2. UI & Styling (No Tailwind):**
-- Tailwind CSS পুরোপুরি বাদ দিয়ে **Custom CSS** ব্যবহার করে প্রফেশনাল **Glassmorphism (গ্লাস এফেক্ট)** ডিজাইন তৈরি করা হয়েছে।
-- একটি প্রিমিয়াম লোগো (`logo.png`) এবং অথেনটিকেশন পেজ (Login/Signup) সম্পূর্ণ রেডি করা হয়েছে।
+```
+backend/
+  src/                    Express API (routes → controllers → services → models)
+  mail-relay-pythonanywhere.py   Gmail relay (PythonAnywhere এ চলে)
+  config.example.py       relay এর সিক্রেটের নমুনা (আসল config.py GitHub এ যায় না)
+  .env.example            Node এর সব env এর নমুনা
+frontend/                 React অ্যাপ (build হলে Express ই এটা দেখায়)
+render.yaml               Render Blueprint
+DEPLOY.md                 ধাপে ধাপে deploy গাইড
+```
 
----
+## 🔄 ইমেইল কীভাবে যায়
 
-## ⏳ What's Next (পরবর্তী কাজ ও করণীয়)
+Render এর free plan এ SMTP বন্ধ, তাই: **Render → (HTTPS) → PythonAnywhere relay → Gmail → ইনবক্স**।
+`MAIL_PROVIDER` দিয়ে বেছে নেওয়া যায়: `relay` (ডিফল্ট সুপারিশ), `brevo`, `smtp` (শুধু local)।
 
-### 💻 Frontend (React)
-- [ ] **Dashboard UI:** ড্যাশবোর্ডের ডিজাইন করা, যেখানে API Key তৈরি এবং কপি করার অপশন থাকবে।
-- [ ] **State Management:** লগইন করা ইউজারের ডেটা পুরো অ্যাপে ধরে রাখার জন্য Context API বা Zustand সেটআপ করা।
-- [ ] **API Integration:** ব্যাকএন্ডের সাথে ডেটা আদান-প্রদানের জন্য `Axios` এবং ক্যাশিংয়ের জন্য `TanStack Query` ব্যবহার করা।
+## ▶ Local এ চালানো
 
-### ⚙️ Backend (Node.js & MongoDB) - *In-Depth Planning*
-ব্যাকএন্ড হবে এই প্রজেক্টের "মস্তিষ্ক"। আমরা এখানে **Service-Oriented Architecture** ফলো করব।
+```bash
+cd backend  && cp .env.example .env && npm i && npm run dev     # http://localhost:3000
+cd frontend && npm i && npm run dev                              # http://localhost:5173
+```
 
-- **Modular Architecture (মডিউলার গঠন):**
-  - `routes/`: শুধু API এন্ডপয়েন্টগুলো (যেমন: `/api/auth/login`, `/api/keys/generate`) এখানে থাকবে।
-  - `controllers/`: রিকোয়েস্ট রিসিভ করা এবং রেসপন্স (JSON) পাঠানোর লজিক এখানে থাকবে।
-  - `services/`: আসল কাজ (যেমন ডাটাবেসে সেভ করা, ইমেইল পাঠানো, API key জেনারেট করা) এখানে থাকবে। এতে কোড রিইউজ করা সহজ হবে।
-  
-- **Database Design (MongoDB):**
-  - **`users` Collection:** ইউজারের নাম, ইমেইল, হ্যাশ করা পাসওয়ার্ড (Bcrypt) এবং সাবস্ক্রিপশন প্ল্যান থাকবে।
-  - **`apikeys` Collection:** এখানে ইউজারের তৈরি করা API Key গুলো সেভ থাকবে। প্রতিটি Key-এর সাথে `userId`, `keyString`, `isActive`, এবং সবচেয়ে গুরুত্বপূর্ণ—`usageCount` (কতগুলো ইমেইল পাঠানো হয়েছে তার হিসাব) থাকবে।
+## 🚀 Deploy
 
-- **Core API Features:**
-  - [ ] **Auth System:** JWT (JSON Web Token) ভিত্তিক সিকিউর লগইন এবং সাইনআপ। (OTP সিস্টেম আপাতত বন্ধ রাখা হচ্ছে)।
-  - [ ] **API Key Generator:** `crypto` মডিউল ব্যবহার করে সিকিউর এবং ইউনিক API Key জেনারেট করার API।
-  - [ ] **Email Dispatcher Endpoint:** একটি পাবলিক এন্ডপয়েন্ট (`/api/send`) যেখানে অন্য ডেভেলপাররা তাদের API Key এবং ইমেইলের ডেটা (To, Subject, Body) POST করবে।
+[DEPLOY.md](./DEPLOY.md) দেখো। API এর বিস্তারিত: [backend/API.md](./backend/API.md)
 
----
+## 🔐 নিরাপত্তা নোট
 
-## 🛠 How We Will Handle It (কাজের কৌশল ও ব্যাকএন্ড হ্যান্ডলিং)
-
-1. **Usage Tracking (লিমিট কন্ট্রোল):** 
-   যখনই কেউ ইমেইল পাঠানোর API (`/api/send`) কল করবে, ব্যাকএন্ড প্রথমে চেক করবে API Key-টি ডাটাবেসে আছে কি না এবং অ্যাক্টিভ কি না। সব ঠিক থাকলে ইমেইল সেন্ড হবে এবং সাথে সাথে MongoDB-এর `$inc` অপারেটর ব্যবহার করে `usageCount` ১ বাড়িয়ে দেওয়া হবে। লিমিট পার হয়ে গেলে API 429 (Too Many Requests) বা 403 এরর রিটার্ন করবে।
-
-2. **Middleware Security (নিরাপত্তা বেষ্টনী):**
-   - **Auth Guard:** ড্যাশবোর্ডের ডেটা এক্সেস করার আগে `verifyToken` মিডলওয়্যার চেক করবে ইউজার লগইন করা আছে কি না।
-   - **API Key Guard:** ইমেইল পাঠানোর রাউটে `verifyApiKey` মিডলওয়্যার বসানো থাকবে, যা ইউজারের পাঠানো Key যাচাই করবে।
-
-3. **Error Handling:** 
-   আমরা একটি **Global Error Handler** তৈরি করব। ডাটাবেস ক্র্যাশ বা কোনো লজিক্যাল ভুল হলে অ্যাপ ক্র্যাশ করবে না, বরং ফ্রন্টএন্ডে একটি সুন্দর JSON মেসেজ (যেমন: `{ success: false, message: "Invalid API Key" }`) পাঠিয়ে দেবে।
-
----
-
-## ⚠️ Potential Challenges (সম্ভাব্য চ্যালেঞ্জ ও সমাধান)
-
-### 1. API Key Abuse & DDoS (ব্যাকএন্ড সিকিউরিটি)
-- **সমস্যা:** কেউ যদি API Key পেয়ে যায় বা কোনো বট দিয়ে একসাথে হাজার হাজার ইমেইল রিকোয়েস্ট পাঠায়, তবে সার্ভার ক্র্যাশ করতে পারে।
-- **সমাধান:** `express-rate-limit` প্যাকেজ ব্যবহার করে প্রতি মিনিটে রিকোয়েস্ট লিমিট সেট করে দেওয়া হবে।
-
-### 2. Event Loop Blocking (সার্ভার স্লো হয়ে যাওয়া)
-- **সমস্যা:** ইমেইল পাঠানো একটি ধীর গতির কাজ (I/O heavy)। একসাথে অনেক রিকোয়েস্ট এলে Node.js-এর ইভেন্ট লুপ ব্লক হয়ে সার্ভার স্লো হতে পারে।
-- **সমাধান:** আমরা `async/await` ব্যবহার করে Non-blocking ওয়েতে কাজ করব। ভবিষ্যতে ট্রাফিক বাড়লে ইমেইল পাঠানোর জন্য Message Queue (যেমন: Redis + Bull) ব্যবহার করার আর্কিটেকচার মাথায় রাখব।
-
-### 3. CORS & Preflight Errors (ফ্রন্টএন্ড-ব্যাকএন্ড কানেকশন)
-- **সমস্যা:** ফ্রন্টএন্ড এবং ব্যাকএন্ড আলাদা পোর্টে বা সার্ভারে চললে ব্রাউজার সিকিউরিটি ইস্যু (CORS) দেখায়।
-- **সমাধান:** ব্যাকএন্ডে `cors` প্যাকেজ এমনভাবে কনফিগার করা হবে যাতে শুধুমাত্র আমাদের ফ্রন্টএন্ডের ডোমেন বা স্পেসিফিক ডোমেন থেকেই রিকোয়েস্ট এক্সেপ্ট করা হয়।
-
-### 4. Data Consistency (ডেটা সিঙ্কিং)
-- **সমস্যা:** ড্যাশবোর্ডে API usage count রিয়েল-টাইমে আপডেট না হলে ইউজার কনফিউজড হতে পারে।
-- **সমাধান:** TanStack Query-এর `invalidateQueries` ব্যবহার করে যখনই নতুন কোনো একশন হবে, ব্যাকএন্ড থেকে ফ্রেশ ডেটা রিফেচ করে UI আপডেট করা হবে।
-
----
-*Architected and Developed with ❤️ by Anubhab Dutta*
+- সব সিক্রেট env তে (Node) বা `config.py` তে (relay) — কোডে বা GitHub এ কিছু নেই
+- Rate limit, API key যাচাই, মাসিক লিমিট, bot-check (honeypot), HTML escape করা ইমেইল
+- httpOnly + secure cookie, OTP hash করা, Kill switch এ আলাদা password

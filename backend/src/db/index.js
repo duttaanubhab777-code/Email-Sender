@@ -4,10 +4,27 @@ import { DB_NAME } from "../constants.js";
 // কোনো query আটকে থাকলে চিরকাল "loading" না দেখিয়ে কিছুক্ষণ পর error দেবে
 mongoose.set("bufferTimeoutMS", 15_000);
 
+// Atlas এর দেওয়া URI যেমনই হোক (শেষে "/", "?retryWrites=true&w=majority&appName=..." থাকুক বা না থাকুক)
+// সঠিকভাবে database নাম বসিয়ে দেয়। আগে "?..." থাকলে connection ভেঙে যেত।
+export const buildMongoUri = (raw, dbName = DB_NAME) => {
+    const uri = String(raw ?? "").trim().replace(/^["']|["']$/g, "");
+    if (!uri) throw new Error("MONGODB_URI is not set");
+    const scheme = uri.match(/^mongodb(?:\+srv)?:\/\//);
+    if (!scheme) throw new Error("MONGODB_URI must start with mongodb:// or mongodb+srv://");
+
+    const q = uri.indexOf("?");
+    const base = q === -1 ? uri : uri.slice(0, q);
+    const query = q === -1 ? "" : uri.slice(q);
+    const rest = base.slice(scheme[0].length);
+    const slash = rest.indexOf("/");
+    const hosts = slash === -1 ? rest : rest.slice(0, slash);
+    return `${scheme[0]}${hosts}/${dbName}${query}`;
+};
+
 const connectDB = async () => {
     try {
         const connectionInstance = await mongoose.connect(
-            `${process.env.MONGODB_URI}/${DB_NAME}`,
+            buildMongoUri(process.env.MONGODB_URI),
             {
                 serverSelectionTimeoutMS: 15_000,
                 socketTimeoutMS: 45_000

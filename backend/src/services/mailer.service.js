@@ -36,8 +36,9 @@ const shell = (heading, inner) => `<!DOCTYPE html><html><body style="margin:0;pa
 <tr><td style="padding:14px;text-align:center;background:#09090b;color:#71717a;font-size:12px;">Email Sender</td></tr>
 </table></td></tr></table></body></html>`;
 
-// Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই HTTPS (পোর্ট 443) এ পাঠানো হয়, অগ্রাধিকার ক্রমে:
-//   ১) BREVO_API_KEY  ২) MAIL_RELAY_URL (Google Apps Script + নিজের Gmail)  ৩) SMTP (শুধু local এ কাজ করে)
+// Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই HTTPS (পোর্ট 443) এ পাঠানো হয়।
+// MAIL_PROVIDER দিয়ে বেছে নেওয়া যায়: relay | brevo | smtp | auto (default)
+//   auto হলে অগ্রাধিকার: ১) BREVO_API_KEY  ২) MAIL_RELAY_URL (PythonAnywhere + নিজের Gmail)  ৩) SMTP (শুধু local এ কাজ করে)
 const FROM_EMAIL = () =>
     (process.env.MAIL_FROM || process.env.SMTP_USER || "").trim();
 
@@ -70,10 +71,23 @@ const sendViaBrevo = async ({ to, subject, html, fromName, replyTo }) => {
     }
 };
 
-// Google Apps Script "relay": তোমার নিজের Gmail দিয়ে পাঠায় (domain/ফোন verify/কার্ড লাগে না)। Gmail free এ দিনে ~১০০টা।
-// backend/mail-relay.gs এর কোড script.google.com এ বসিয়ে Web app হিসেবে deploy করলে URL পাওয়া যায়।
+// "Relay": PythonAnywhere এ চলা ছোট Flask app (backend/mail-relay-pythonanywhere.py), তোমার নিজের Gmail দিয়ে পাঠায়।
+// PythonAnywhere এর ঠিকানা দিলে শেষে /send না থাকলেও নিজে যোগ করে নেয়।
+const relayUrl = () => {
+    const raw = (process.env.MAIL_RELAY_URL || "").trim();
+    try {
+        const u = new URL(raw);
+        if (/pythonanywhere\.com$/i.test(u.hostname) && (u.pathname === "/" || u.pathname === "")) {
+            u.pathname = "/send";
+        }
+        return u.href;
+    } catch {
+        throw new Error("MAIL_RELAY_URL is not a valid URL");
+    }
+};
+
 const sendViaRelay = async ({ to, subject, html, fromName, replyTo }) => {
-    const res = await fetch(process.env.MAIL_RELAY_URL.trim(), {
+    const res = await fetch(relayUrl(), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -84,17 +98,19 @@ const sendViaRelay = async ({ to, subject, html, fromName, replyTo }) => {
             fromName,
             replyTo: replyTo?.email || ""
         }),
-        signal: AbortSignal.timeout(30_000)
+        // relay নিজে দুটো SMTP পোর্টে (প্রতিটায় ~12 সেকেন্ড) চেষ্টা করতে পারে, তাই এর চেয়ে বেশি অপেক্ষা
+        signal: AbortSignal.timeout(45_000)
     });
     const text = await res.text();
     let data = null;
     try {
         data = JSON.parse(text);
     } catch {
-        /* Google এর error পেজ (HTML) */
+        /* relay এর বদলে অন্য কোনো (HTML) error পেজ এসেছে */
     }
     if (!res.ok || data?.ok !== true) {
-        throw new Error(`Relay ${res.status}: ${String(data?.error || text).slice(0, 200)}`);
+        const reason = data?.error || (res.status === 404 ? "relay URL ভুল (শেষে /send আছে?)" : text);
+        throw new Error(`Relay ${res.status}: ${String(reason).slice(0, 200)}`);
     }
 };
 
@@ -107,6 +123,26 @@ const sendViaSmtp = ({ to, subject, html, fromName, replyTo }) =>
         ...(replyTo?.email ? { replyTo: replyTo.email } : {})
     });
 
+// কোন উপায়ে ইমেইল যাচ্ছে (server চালুর সময় log এ দেখানো হয়)
+export const mailProvider = () => {
+    const forced = (process.env.MAIL_PROVIDER || "auto").trim().toLowerCase();
+    if (["relay", "brevo", "smtp"].includes(forced)) return forced;
+    if (process.env.BREVO_API_KEY?.trim()) return "brevo";
+    if (process.env.MAIL_RELAY_URL?.trim()) return "relay";
+    return "smtp";
+};
+
+// ঠিকঠাক সেটআপ আছে কিনা — না থাকলে শুরুতেই স্পষ্ট warning
+export const mailConfigProblem = () => {
+    const p = mailProvider();
+    if (p === "relay" && (!process.env.MAIL_RELAY_URL?.trim() || !process.env.MAIL_RELAY_SECRET?.trim()))
+        return "MAIL_PROVIDER=relay কিন্তু MAIL_RELAY_URL / MAIL_RELAY_SECRET দেওয়া নেই";
+    if (p === "brevo" && !process.env.BREVO_API_KEY?.trim()) return "MAIL_PROVIDER=brevo কিন্তু BREVO_API_KEY নেই";
+    if (p === "smtp" && (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS))
+        return "কোনো mail provider সেট করা নেই (MAIL_RELAY_URL বা BREVO_API_KEY বা SMTP_*)";
+    return null;
+};
+
 export const sendMail = async ({ to, subject, html, fromName, replyTo }) => {
     const opts = {
         to,
@@ -116,8 +152,9 @@ export const sendMail = async ({ to, subject, html, fromName, replyTo }) => {
         replyTo
     };
     try {
-        if (process.env.BREVO_API_KEY?.trim()) await sendViaBrevo(opts);
-        else if (process.env.MAIL_RELAY_URL?.trim()) await sendViaRelay(opts);
+        const provider = mailProvider();
+        if (provider === "brevo") await sendViaBrevo(opts);
+        else if (provider === "relay") await sendViaRelay(opts);
         else await sendViaSmtp(opts);
     } catch (error) {
         console.error("Mailer error:", error.message);

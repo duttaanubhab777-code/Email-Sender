@@ -9,6 +9,8 @@ export const killGate = (req, res, next) => {
     // frontend একই server থেকে আসে: পেজ/ফাইল খোলা থাকতে হবে, নাহলে countdown দেখানোর কিছুই থাকবে না
     if (!req.path.startsWith("/api/")) return next();
     if (req.method === "GET" && req.path === "/api/v1/system/status") return next();
+    // Render এর health check — countdown চলার সময় এটা 503 দিলে Render server কে "অসুস্থ" ভেবে আগেই restart করে দিত
+    if (req.method === "GET" && req.path === "/api/v1/mail/ping") return next();
 
     res.set("Retry-After", String(status.remainingSeconds));
     return res.status(503).json({

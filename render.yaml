@@ -1,4 +1,6 @@
 # Render Blueprint — frontend + backend একই Web Service এ
+# (এই ফাইল Git এ push করে Render → New → Blueprint দিলে সব সেটআপ নিজে থেকে হয়;
+#  sync: false মানে মানটা Render এর ড্যাশবোর্ডে তুমি নিজে বসাবে)
 services:
   - type: web
     name: email-sender
@@ -7,44 +9,62 @@ services:
     buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /api/v1/mail/ping
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 22
       - key: TRUST_PROXY
         value: "1"
+
+      # ডাটাবেস
       - key: MONGODB_URI
         sync: false
+
+      # login token (Render নিজে random মান বানিয়ে দেয়)
       - key: ACCESS_TOKEN_SECRET
         generateValue: true
       - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: OTP_SECRET
         generateValue: true
       - key: ACCESS_TOKEN_EXPIRY
         value: 1d
       - key: REFRESH_TOKEN_EXPIRY
         value: 10d
-      - key: CRON_SECRET
-        generateValue: true
-      - key: BREVO_API_KEY
-        sync: false
-      - key: MAIL_FROM
-        sync: false
+
+      # ইমেইল — PythonAnywhere relay
+      - key: MAIL_PROVIDER
+        value: relay
       - key: MAIL_RELAY_URL
         sync: false
       - key: MAIL_RELAY_SECRET
         sync: false
+
+      # cron-job.org (দিনে ২ বার জাগানো + আটকে থাকা মেইল আবার পাঠানো)
+      - key: CRON_SECRET
+        generateValue: true
+
       - key: SUPER_ADMIN_EMAIL
         sync: false
+
+      # Cloudinary (avatar)
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+
+      # Push notification
       - key: VAPID_PUBLIC_KEY
         sync: false
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: VAPID_SUBJECT
         sync: false
+
+      # Kill switch
       - key: KILL_SWITCH_PASSWORD_HASH
         sync: false
+      - key: KILL_ALLOW_CODE_DELETE
+        value: "false"

@@ -1,2 +1,22 @@
+# dependencies
 node_modules/
+
+# সিক্রেট — কখনো GitHub এ যাবে না
 .env
+.env.*
+!.env.example
+config.py
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# build / logs / OS
+dist/
+*.log
+.DS_Store
+
+# upload এর অস্থায়ী ফাইল
+backend/public/temp/*
+!backend/public/temp/.gitkeep
