@@ -4,7 +4,7 @@ import { BASE_URL } from "../services/api";
 // ফর্মের হেডারে বড় করে দেখানো হয় (160px), তাই আগের 64px এর বদলে বড় সাইজ চাওয়া হয়েছে।
 // বড় সাইজ না পেলে নিজে থেকে আগের ছোট লিংকে ফিরে যায় (onerror fallback)।
 export const LOGO_URL =
-    "https://res.cloudinary.com/khvkgpxq/image/upload/w_160,h_160,c_fit,f_auto,q_auto/v1791551108/badge-logo.png";
+    "https://res.cloudinary.com/khvkgpxq/image/upload/v1791965885/badge-logo-320.png";
 export const LOGO_FALLBACK =
     "https://res.cloudinary.com/khvkgpxq/image/upload/w_64,h_64,c_fit,f_auto,q_auto/v1791551108/badge-logo.png";
 
@@ -230,13 +230,7 @@ const ICON = {
     chat: `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/></svg>`
 };
 
-export const buildForm = ({
-    key,
-    action,
-    theme,
-    logo,
-    home
-}) => {
+export const buildForm = ({ key, action, theme, logo, home }) => {
     const onErr = `if(this.dataset.f){this.style.display='none'}else{this.dataset.f=1;this.src='${LOGO_FALLBACK}'}`;
     return `<form class="es-form" id="es-form" data-theme="${theme}" action="${action}" method="POST">
   <div class="es-head">
