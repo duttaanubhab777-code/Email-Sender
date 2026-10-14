@@ -7,7 +7,7 @@
    - পেজ (index.html) সবসময় আগে network থেকে, তাই পুরনো ভার্সন আটকে থাকে না
    - শুধু hashed /assets/* আর আইকন/ফন্ট cache হয় */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `es-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [

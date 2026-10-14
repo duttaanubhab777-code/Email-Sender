@@ -14,14 +14,12 @@ import {
     Skeleton
 } from "../../components/ui/Bits";
 import { fmtBytes, maskKey } from "../../lib/format";
-import { buildSnippet, endpoint, previewDoc } from "../../lib/embedForm";
-
-const TABS = [
-    { id: "styled", label: "HTML form" },
-    { id: "plain", label: "Plain HTML" },
-    { id: "js", label: "JavaScript" },
-    { id: "curl", label: "cURL" }
-];
+import {
+    SNIPPET_TABS as TABS,
+    buildSnippet,
+    endpoint,
+    previewDoc
+} from "../../lib/embedForm";
 
 export default function MailSend() {
     const toast = useToast();

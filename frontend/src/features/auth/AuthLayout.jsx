@@ -7,8 +7,14 @@ export default function AuthLayout({ children }) {
     return (
         <div className="auth">
             <section className="auth-art" aria-hidden="true">
+                <div className="art-orbs">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                </div>
                 <span className="logo-tile">
-                    <LogoFull width={168} />
+                    <LogoFull width={230} />
                 </span>
                 <div>
                     <h2>
@@ -71,7 +77,7 @@ export default function AuthLayout({ children }) {
                 </div>
                 <div className="auth-card">
                     <div className="mob-brand">
-                        <LogoFull width={150} />
+                        <LogoFull width={220} className="auth-logo-big" />
                     </div>
                     {children}
                 </div>

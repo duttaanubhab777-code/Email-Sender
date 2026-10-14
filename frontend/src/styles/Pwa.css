@@ -18,9 +18,9 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: var(--brand);
-    color: var(--brand-ink);
-    box-shadow: 0 6px 16px rgba(0, 237, 100, 0.28);
+    background: var(--grad-blue);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(29, 109, 255, 0.32);
 }
 .pwa-text {
     flex: 1;

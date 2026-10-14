@@ -13,7 +13,7 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="description" content="Email Sender — a contact form API. Receive form messages straight in your inbox, with approvals, notifications and admin tools." />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#071319" />
+    <meta name="theme-color" content="#060f1f" />
     <title>Email Sender — Contact form API</title>
     <script>
       // থিম ফ্ল্যাশ আটকাতে পেজ আঁকার আগেই থিম বসানো
@@ -22,14 +22,44 @@
           var t = localStorage.getItem("es-theme");
           if (t !== "light" && t !== "dark") t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
           document.documentElement.setAttribute("data-theme", t);
-          if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f5f7f6");
+          if (t === "light") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f3f7ff");
         } catch (e) {}
       })();
     </script>
+    <style>
+      /* Boot loader: React লোড হওয়ার আগেই (প্রথম পেইন্টেই) দেখা যায় — শুধু HTML + CSS */
+      #boot { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; text-align: center; font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: radial-gradient(600px 420px at 82% 8%, rgba(255,122,26,.2), transparent 64%), radial-gradient(660px 440px at 12% 92%, rgba(29,139,255,.24), transparent 64%), #f3f7ff; color: #5a6b85; }
+      html[data-theme="dark"] #boot { background: radial-gradient(600px 420px at 82% 8%, rgba(255,138,42,.16), transparent 64%), radial-gradient(660px 440px at 12% 92%, rgba(47,134,255,.26), transparent 64%), #060f1f; color: #8fa5c7; }
+      #boot .st { position: relative; width: 170px; height: 170px; margin: 0 auto 16px; display: grid; place-items: center; }
+      #boot .rg { position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent; border-top-color: #1a6dff; border-right-color: #19c3ff; animation: bt-spin 1.4s linear infinite; }
+      #boot .rg.b { inset: 16px; border: 2px solid transparent; border-bottom-color: #ff6a00; border-left-color: #ffa11f; animation-direction: reverse; animation-duration: 2s; }
+      #boot img { position: relative; width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(29,109,255,.4)); animation: bt-bob 2.4s ease-in-out infinite; }
+      #boot h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: #0b57c4; }
+      html[data-theme="dark"] #boot h1 { color: #5aa2ff; }
+      #boot h1 b { color: #f26a0c; }
+      html[data-theme="dark"] #boot h1 b { color: #ff8a3d; }
+      #boot .bar { position: relative; width: 220px; max-width: 70vw; height: 6px; margin: 14px auto 12px; border-radius: 99px; overflow: hidden; background: rgba(29,109,255,.12); }
+      #boot .bar i { position: absolute; top: 0; bottom: 0; width: 45%; border-radius: 99px; background: linear-gradient(110deg, #0b57c4, #1d8bff 40%, #ff7a1a); animation: bt-load 1.3s ease-in-out infinite; }
+      #boot p { margin: 0; font-size: 13.5px; font-weight: 500; }
+      @keyframes bt-spin { to { transform: rotate(360deg); } }
+      @keyframes bt-bob { 50% { transform: translateY(-6px); } }
+      @keyframes bt-load { 0% { left: -45%; } 100% { left: 100%; } }
+      @media (prefers-reduced-motion: reduce) { #boot * { animation-duration: .001ms !important; } }
+    </style>
   </head>
   <body>
     <noscript>Email Sender needs JavaScript to run. Please enable it and reload.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot" role="status" aria-live="polite">
+        <div>
+          <div class="st"><span class="rg"></span><span class="rg b"></span><img src="/icon-192.png" alt="Email Sender" width="96" height="96" /></div>
+          <h1>Email<b>Sender</b></h1>
+          <div class="bar"><i></i></div>
+          <p>Starting Email Sender…</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

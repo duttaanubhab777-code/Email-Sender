@@ -1,18 +1,6 @@
-import Backdrop from "./Backdrop";
-import { LogoMark } from "./Logo";
+import Splash from "./ui/Splash";
 
-// ফুল-স্ক্রিন লোডার (ProtectedRoute/PublicRoute-এ ব্যবহার হয়)
-export default function Spinner({ text = "Loading..." }) {
-  return (
-    <>
-      <Backdrop />
-      <div className="splash">
-        <div className="splash-orbit">
-          <span /><span /><span />
-          <LogoMark size={54} />
-        </div>
-        <p>{text}</p>
-      </div>
-    </>
-  );
+// ফুল-স্ক্রিন লোডার — এখন নতুন অ্যানিমেটেড Splash ব্যবহার করে
+export default function Spinner({ text }) {
+    return <Splash text={text} />;
 }
