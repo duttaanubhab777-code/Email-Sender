@@ -5,6 +5,7 @@ import { Submission } from "../models/submission.model.js";
 import { ApiKey } from "../models/ApiKey.model.js";
 import { deliverInBackground } from "../services/mailQueue.service.js";
 import { notifyUser, notifyAdmins } from "../services/notification.service.js";
+import { pickSourceUrl } from "../utils/sourceUrl.js";
 
 const safeRedirect = req => {
     try {
@@ -57,6 +58,8 @@ const sendEmail = asyncHandler(async (req, res) => {
     if (!ownerUser?.email) throw new ApiError(404, "API Key owner not found");
 
     const clientIp = req.ip || req.socket.remoteAddress || "N/A";
+    // কোন পেজ/ওয়েবসাইট থেকে ফর্ম ভরা হয়েছে (পুরো লিংক)
+    const sourceUrl = pickSourceUrl(req);
 
     const respond = (log, code) => {
         const redirectTo = safeRedirect(req);
@@ -90,6 +93,7 @@ const sendEmail = asyncHandler(async (req, res) => {
             subject,
             message,
             ipAddress: clientIp,
+            sourceUrl,
             status: "pending",
             clientRef
         });

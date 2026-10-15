@@ -12,6 +12,16 @@ const hueOf = str => {
     for (const ch of String(str || "?")) h = (h * 31 + ch.charCodeAt(0)) % 360;
     return h;
 };
+// লিংক থেকে "localhost:5173/contact" ধরনের ছোট রূপ (পুরো লিংক আলাদা দেখানো হয়)
+const shortUrl = href => {
+    try {
+        const u = new URL(href);
+        const path = u.pathname === "/" ? "" : u.pathname;
+        return `${u.host}${path}`;
+    } catch {
+        return href;
+    }
+};
 const initialsOf = name =>
     String(name || "?")
         .trim()
@@ -56,7 +66,7 @@ function Tile({ icon, label, wide, copy, children }) {
 /**
  * একটা email এর পুরো বিবরণ — user এর dashboard আর admin এর "Sent emails" দুই জায়গায় একই ডিজাইন।
  * m = { id, subject, status, createdAt, senderName, senderEmail, receiverEmail,
- *       message, ipAddress, apiKeyName, owner? }
+ *       message, ipAddress, sourceUrl, apiKeyName, owner? }
  */
 export default function EmailDetailDrawer({ m, onClose }) {
     const toast = useToast();
@@ -72,6 +82,7 @@ export default function EmailDetailDrawer({ m, onClose }) {
               `Delivered to: ${m.receiverEmail}`,
               m.owner ? `Account: ${m.owner.fullName} (@${m.owner.username}) <${m.owner.email}>` : null,
               `API key: ${m.apiKeyName}`,
+              `Source page: ${m.sourceUrl || "not recorded"}`,
               `Sender IP: ${m.ipAddress || "unknown"}`,
               "",
               m.message
@@ -128,6 +139,18 @@ export default function EmailDetailDrawer({ m, onClose }) {
                             <span>
                                 <Icon name="clock" size={13} /> {fmtStampFull(m.createdAt)}
                             </span>
+                            {m.sourceUrl && (
+                                <a
+                                    className="ed-src"
+                                    href={m.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={m.sourceUrl}
+                                >
+                                    <Icon name="globe" size={13} />
+                                    <span className="truncate">{shortUrl(m.sourceUrl)}</span>
+                                </a>
+                            )}
                         </div>
                     </section>
 
@@ -233,6 +256,20 @@ export default function EmailDetailDrawer({ m, onClose }) {
                     <section>
                         <h4 className="ed-h">Technical details</h4>
                         <div className="ed-grid">
+                            <Tile icon="external" label="Form filled on" wide copy={m.sourceUrl || ""}>
+                                {m.sourceUrl ? (
+                                    <a
+                                        className="ed-link mono"
+                                        href={m.sourceUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {m.sourceUrl}
+                                    </a>
+                                ) : (
+                                    <span className="muted">Not recorded</span>
+                                )}
+                            </Tile>
                             <Tile icon="globe" label="Sender IP" copy={m.ipAddress || ""}>
                                 <span className="mono">{m.ipAddress || "Unknown"}</span>
                             </Tile>

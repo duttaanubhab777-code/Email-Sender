@@ -192,6 +192,8 @@ export const ES_JS = `(function () {
     var data = new FormData(form);
     var id = uid();
     data.set("submissionId", id);
+    // কোন পেজ থেকে ফর্ম ভরা হলো (পুরো লিংক, localhost হলে port সহ) — ইমেইলে ও dashboard এ দেখায়
+    data.set("pageUrl", window.location.href);
     var item = { id: id, action: form.action, body: new URLSearchParams(data), t: Date.now() };
     // সার্ভার ঘুমন্ত থাকলে জাগতে সময় লাগতে পারে — মেসেজটা আগে ফোনে/ব্রাউজারে সুরক্ষিত রাখি
     var list = load();
@@ -319,6 +321,7 @@ ${ES_JS}
 <form action="${url}" method="POST">
   <input type="hidden" name="access_key" value="${key}">
   <input type="hidden" name="redirect" value="https://your-site.com/thank-you">
+  <input type="hidden" name="pageUrl" id="es-page-url">
   <input type="text" name="botcheck" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off" aria-hidden="true">
 
   <label>Name <input type="text" name="name" required></label>
@@ -327,7 +330,12 @@ ${ES_JS}
   <label>Message <textarea name="message" rows="5" required></textarea></label>
 
   <button type="submit">Send message</button>
-</form>`;
+</form>
+
+<!-- saves the full link of this page (with port) together with the message -->
+<script>
+  document.getElementById("es-page-url").value = window.location.href;
+</script>`;
     }
     if (tab === "js") {
         return `const res = await fetch("${url}", {
@@ -337,7 +345,8 @@ ${ES_JS}
     name: "John Doe",
     email: "john@example.com",
     subject: "Hello",
-    message: "Sent from my app"
+    message: "Sent from my app",
+    pageUrl: window.location.href // full link of the page (optional)
   })
 });
 const data = await res.json();
@@ -358,7 +367,10 @@ export default function ContactForm() {
       const res = await fetch("${url}", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": "${key}" },
-        body: JSON.stringify(Object.fromEntries(new FormData(form)))
+        body: JSON.stringify({
+          ...Object.fromEntries(new FormData(form)),
+          pageUrl: window.location.href // full link of the page (optional)
+        })
       });
       if (!res.ok) throw new Error("Request failed: " + res.status);
       form.reset();
@@ -387,7 +399,7 @@ export default function ContactForm() {
         return `// Next.js (App Router) — app/api/contact/route.js
 // The API key stays on the server (put it in .env.local), never in the browser.
 export async function POST(req) {
-  const { name, email, subject, message } = await req.json();
+  const { name, email, subject, message, pageUrl } = await req.json();
 
   const res = await fetch("${url}", {
     method: "POST",
@@ -395,7 +407,7 @@ export async function POST(req) {
       "Content-Type": "application/json",
       "x-api-key": process.env.EMAIL_SENDER_KEY
     },
-    body: JSON.stringify({ name, email, subject, message })
+    body: JSON.stringify({ name, email, subject, message, pageUrl })
   });
 
   const data = await res.json().catch(() => ({}));
@@ -408,7 +420,8 @@ export async function POST(req) {
 // In your page/component:
 // await fetch("/api/contact", { method: "POST",
 //   headers: { "Content-Type": "application/json" },
-//   body: JSON.stringify({ name, email, subject, message }) });`;
+//   body: JSON.stringify({ name, email, subject, message,
+//     pageUrl: window.location.href }) });`;
     }
     if (tab === "node") {
         return `// Node.js 18+ (built-in fetch) + Express
@@ -420,12 +433,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.post("/contact", async (req, res) => {
-  const { name, email, subject, message } = req.body;
+  const { name, email, subject, message, pageUrl } = req.body; // pageUrl: send window.location.href from your form
   try {
     const r = await fetch("${url}", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": "${key}" },
-      body: JSON.stringify({ name, email, subject, message })
+      body: JSON.stringify({ name, email, subject, message, pageUrl })
     });
     res.status(r.status).json(await r.json());
   } catch (err) {
@@ -450,6 +463,8 @@ $payload = [
     "email"   => trim($_POST["email"] ?? ""),
     "subject" => trim($_POST["subject"] ?? ""),
     "message" => trim($_POST["message"] ?? ""),
+    // optional: add <input type="hidden" name="pageUrl"> filled with window.location.href
+    "pageUrl" => trim($_POST["pageUrl"] ?? ""),
 ];
 
 $ch = curl_init("${url}");

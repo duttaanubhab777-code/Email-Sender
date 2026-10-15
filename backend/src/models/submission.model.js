@@ -38,6 +38,11 @@ const submissionSchema = new mongoose.Schema(
             type: String,
             default: null
         },
+        // ফর্মটা কোন পেজ থেকে পূরণ হয়েছে — পুরো লিংক (localhost হলে port সহ)। পুরনো মেসেজে null
+        sourceUrl: {
+            type: String,
+            default: null
+        },
 
         // pending = লাইনে আছে / আবার চেষ্টার অপেক্ষায়, sending = এখন পাঠানো হচ্ছে,
         // sent = পৌঁছেছে, failed = সব চেষ্টার পরেও যায়নি (মেসেজ DB তে থেকেই যায়)

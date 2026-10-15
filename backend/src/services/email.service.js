@@ -10,8 +10,14 @@ const sendEmailService = async options => {
         senderEmail: escapeHtml(options.senderEmail),
         subject: escapeHtml(options.subject),
         message: escapeHtml(options.message),
-        ipAddress: escapeHtml(options.ipAddress)
+        ipAddress: escapeHtml(options.ipAddress),
+        sourceUrl: escapeHtml(options.sourceUrl || "")
     };
+
+    // কোন পেজ থেকে ফর্ম ভরা হয়েছে — পুরনো মেসেজে না থাকলে "Not recorded"
+    const sourceCell = e.sourceUrl
+        ? `<a href="${e.sourceUrl}" target="_blank" rel="noopener noreferrer" style="color: #fbbf24; text-decoration: none; font-weight: 500; word-break: break-all;">${e.sourceUrl}</a>`
+        : `<span style="color: #71717a;">Not recorded</span>`;
 
     const html = `
                 <!DOCTYPE html>
@@ -56,6 +62,12 @@ const sendEmailService = async options => {
                                                 <tr>
                                                     <td style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #a1a1aa; font-size: 13px; font-weight: 600;">SUBJECT</td>
                                                     <td style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #38bdf8; font-size: 14px; font-weight: 600;">${e.subject}</td>
+                                                </tr>
+
+                                                <!-- FORM SOURCE PAGE (full link, includes localhost port) -->
+                                                <tr>
+                                                    <td style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #a1a1aa; font-size: 13px; font-weight: 600; vertical-align: top;">SOURCE PAGE</td>
+                                                    <td style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; line-height: 1.5;">${sourceCell}</td>
                                                 </tr>
 
                                                 <tr>

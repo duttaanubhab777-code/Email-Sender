@@ -49,7 +49,7 @@ Countdown শুরু হলে cancel করার কোনো route নে�
 
 ## Admin: সব ইউজারের email (`/api/v1/admin`) — Admin + Super Admin
 - GET /emails?q=&status=sent|failed&userId=&page=&limit= — সব ইউজারের API key দিয়ে আসা email (sender, subject, message, IP, কোন ইউজার/API key)
-  → `{items:[{_id, senderName, senderEmail, receiverEmail, subject, message, ipAddress, status, createdAt, owner:{...}, apiKeyName}], total, sent, failed, page, limit, totalPages}`
+  → `{items:[{_id, senderName, senderEmail, receiverEmail, subject, message, ipAddress, sourceUrl, status, createdAt, owner:{...}, apiKeyName}], total, sent, failed, page, limit, totalPages}`
 
 ## Notifications (`/api/v1/notifications`) — লগইন করা যেকোনো ইউজার (শুধু নিজের)
 - GET / ?filter=all|unread&page=&limit= → `{items, total, unreadCount, page, limit, totalPages}`
@@ -99,4 +99,8 @@ KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_
   `pending → sending → sent`, or `failed` after the last attempt (the message always stays in the database).
 - Send a unique `submissionId` (8–64 chars: letters, digits, `_`, `-`) to make retries safe: the same id
   never creates a second email.
+- Optional `pageUrl` (full link of the page the form was filled on, e.g. `http://localhost:5173/contact?ref=x`).
+  It is saved as `sourceUrl`, shown in the email (SOURCE PAGE row), the dashboard and the admin panel.
+  If `pageUrl` is missing, the `Referer` / `Origin` header is used instead (browsers usually send only
+  `http://host:port` cross-site, so add `pageUrl` to get the full path). Only `http(s)` links are accepted.
 - `GET /api/v1/mail/ping` returns `204` — call it when a form opens to wake a sleeping host.

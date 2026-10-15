@@ -304,3 +304,39 @@
         font-size: 15.5px;
     }
 }
+
+/* form source page (the website/page the form was filled on) */
+.ed-src {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 2px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--accent, inherit);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+.ed-src:hover {
+    border-color: var(--accent, var(--line));
+}
+.ed-src .truncate {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ed-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--line);
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+.ed-link:hover {
+    text-decoration-color: currentColor;
+}

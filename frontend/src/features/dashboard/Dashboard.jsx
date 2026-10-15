@@ -472,6 +472,7 @@ export default function Dashboard() {
                         receiverEmail: open.receiverEmail,
                         message: open.message || "",
                         ipAddress: open.ipAddress,
+                        sourceUrl: open.sourceUrl,
                         apiKeyName: keyName(open.apiKey)
                     }
                 }

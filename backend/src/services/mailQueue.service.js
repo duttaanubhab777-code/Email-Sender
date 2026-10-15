@@ -60,7 +60,8 @@ export const deliver = async id => {
             toEmail: owner?.email || sub.receiverEmail,
             subject: sub.subject,
             message: sub.message,
-            ipAddress: sub.ipAddress || "N/A"
+            ipAddress: sub.ipAddress || "N/A",
+            sourceUrl: sub.sourceUrl || ""
         });
         await Submission.updateOne(
             { _id: sub._id },

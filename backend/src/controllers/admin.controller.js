@@ -391,6 +391,7 @@ const getAllEmails = asyncHandler(async (req, res) => {
             { subject: rx },
             { message: rx },
             { ipAddress: rx },
+            { sourceUrl: rx },
             { user: { $in: owners } }
         ];
     }
@@ -416,6 +417,7 @@ const getAllEmails = asyncHandler(async (req, res) => {
         subject: s.subject,
         message: s.message,
         ipAddress: s.ipAddress,
+        sourceUrl: s.sourceUrl || null,
         status: s.status,
         createdAt: s.createdAt,
         owner: s.user

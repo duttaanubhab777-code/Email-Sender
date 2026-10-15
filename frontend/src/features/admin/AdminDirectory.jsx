@@ -263,6 +263,7 @@ export default function AdminDirectory() {
                             receiverEmail: open.receiverEmail,
                             message: open.message || "",
                             ipAddress: open.ipAddress,
+                            sourceUrl: open.sourceUrl,
                             apiKeyName: open.apiKeyName,
                             owner: open.owner || null
                         }
