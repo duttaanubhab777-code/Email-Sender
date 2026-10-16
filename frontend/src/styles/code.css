@@ -1,0 +1,179 @@
+/* =====================================================
+   Code box: VS Code "Dark+" and "Light+" token colours.
+   lib/highlight.js wraps every token in <span class="tk-…">,
+   the colours live here so they follow the app's light/dark switch.
+   ===================================================== */
+
+/* ---- Light+ (default) ---- */
+.code {
+    --vs-bg: #ffffff;
+    --vs-fg: #1f1f1f;
+    --vs-cmt: #008000;
+    --vs-str: #a31515;
+    --vs-num: #098658;
+    --vs-kw: #0000ff;
+    --vs-ctl: #af00db;
+    --vs-fn: #795e26;
+    --vs-type: #267f99;
+    --vs-var: #001080;
+    --vs-prop: #001080;
+    --vs-const: #0000ff;
+    --vs-regex: #811f3f;
+    --vs-op: #1f1f1f;
+    --vs-pun: #1f1f1f;
+    --vs-tag: #800000;
+    --vs-tag-pun: #800000;
+    --vs-attr: #e50000;
+    --vs-attrval: #0000ff;
+    --vs-selc: #800000;
+    --vs-cssprop: #e50000;
+    --vs-cssval: #0451a5;
+    --vs-json-key: #0451a5;
+    --vs-flag: #001080;
+    --vs-tpl: #0000ff;
+}
+
+/* ---- Dark+ ---- */
+:root[data-theme="dark"] .code {
+    --vs-bg: #1e1e1e;
+    --vs-fg: #d4d4d4;
+    --vs-cmt: #6a9955;
+    --vs-str: #ce9178;
+    --vs-num: #b5cea8;
+    --vs-kw: #569cd6;
+    --vs-ctl: #c586c0;
+    --vs-fn: #dcdcaa;
+    --vs-type: #4ec9b0;
+    --vs-var: #9cdcfe;
+    --vs-prop: #9cdcfe;
+    --vs-const: #569cd6;
+    --vs-regex: #d16969;
+    --vs-op: #d4d4d4;
+    --vs-pun: #d4d4d4;
+    --vs-tag: #569cd6;
+    --vs-tag-pun: #808080;
+    --vs-attr: #9cdcfe;
+    --vs-attrval: #ce9178;
+    --vs-selc: #d7ba7d;
+    --vs-cssprop: #9cdcfe;
+    --vs-cssval: #ce9178;
+    --vs-json-key: #9cdcfe;
+    --vs-flag: #9cdcfe;
+    --vs-tpl: #569cd6;
+}
+
+/* ---- the box itself ---- */
+.code {
+    background: var(--vs-bg);
+    overflow: hidden;
+}
+.code pre,
+.code-pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow: auto;
+    max-height: 460px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--vs-fg);
+    background: var(--vs-bg);
+    tab-size: 2;
+    white-space: pre;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+.code pre code {
+    font: inherit;
+    color: inherit;
+    background: none;
+    padding: 0;
+}
+.code-bar {
+    color: var(--muted);
+}
+
+/* ---- tokens ---- */
+.tk-cmt {
+    color: var(--vs-cmt);
+    font-style: italic;
+}
+.tk-str {
+    color: var(--vs-str);
+}
+.tk-num {
+    color: var(--vs-num);
+}
+.tk-kw {
+    color: var(--vs-kw);
+}
+.tk-ctl {
+    color: var(--vs-ctl);
+}
+.tk-fn {
+    color: var(--vs-fn);
+}
+.tk-type {
+    color: var(--vs-type);
+}
+.tk-var {
+    color: var(--vs-var);
+}
+.tk-prop {
+    color: var(--vs-prop);
+}
+.tk-const {
+    color: var(--vs-const);
+}
+.tk-regex {
+    color: var(--vs-regex);
+}
+.tk-op {
+    color: var(--vs-op);
+}
+.tk-pun {
+    color: var(--vs-pun);
+}
+.tk-tpl {
+    color: var(--vs-tpl);
+}
+.tk-flag {
+    color: var(--vs-flag);
+}
+
+/* HTML / JSX */
+.tk-tag {
+    color: var(--vs-tag);
+}
+.tk-pun-tag {
+    color: var(--vs-tag-pun);
+}
+.tk-attr {
+    color: var(--vs-attr);
+}
+.tk-attrval {
+    color: var(--vs-attrval);
+}
+
+/* CSS */
+.tk-seltag,
+.tk-selc {
+    color: var(--vs-selc);
+}
+.tk-cssprop {
+    color: var(--vs-cssprop);
+}
+.tk-cssval {
+    color: var(--vs-cssval);
+}
+
+/* JSON keys use a different colour than JS properties in Light+ */
+.code-pre[data-lang="json"] .tk-prop {
+    color: var(--vs-json-key);
+}
+
+/* nicer selection, like the editor */
+.code pre ::selection,
+.code pre::selection {
+    background: rgba(38, 119, 255, 0.28);
+}

@@ -1,4 +1,5 @@
 import { BASE_URL } from "../services/api";
+import { formatCss } from "./formatCode";
 
 // Cloudinary তে আপলোড করা badge logo (ছবি যেন কখনো না ভাঙে)।
 // ফর্মের হেডারে বড় করে দেখানো হয় (160px), তাই আগের 64px এর বদলে বড় সাইজ চাওয়া হয়েছে।
@@ -77,7 +78,12 @@ export const ES_CSS = `.es-form{--es-bg:#fff;--es-bd:#dde7f6;--es-tx:#0a1b33;--e
 @media (max-width:420px){.es-form{padding:26px 18px 18px;border-radius:20px}}
 @media (prefers-reduced-motion:reduce){.es-form,.es-form *,.es-form::before{animation-duration:.001ms!important;transition-duration:.001ms!important}}`;
 
-// fetch দিয়ে পাঠায় (redirect নেই)। URLSearchParams = urlencoded body, যা ব্যাকএন্ডের express.urlencoded() পড়তে পারে
+
+// The copy-paste script of the contact form. It is written in Prettier style
+// (2 spaces, double quotes, semicolons, 80 columns) because this exact text is
+// what the "Copy code" box shows and copies.
+// It sends with fetch (no redirect). URLSearchParams = urlencoded body, which
+// the backend's express.urlencoded() can read.
 export const ES_JS = `(function () {
   var form = document.getElementById("es-form");
   var msg = form.querySelector(".es-msg");
@@ -90,72 +96,123 @@ export const ES_JS = `(function () {
   var RETRY = [3000, 8000, 20000, 45000, 90000];
 
   function uid() {
-    try { return crypto.randomUUID(); } catch (e) {}
-    return "es" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+    try {
+      return crypto.randomUUID();
+    } catch (e) {}
+    return (
+      "es" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12)
+    );
   }
-  function load() {
-    try { return JSON.parse(localStorage.getItem(OUTBOX)) || []; } catch (e) { return []; }
-  }
-  function save(list) {
-    try { localStorage.setItem(OUTBOX, JSON.stringify(list)); } catch (e) {}
-  }
-  function drop(id) { save(load().filter(function (m) { return m.id !== id; })); }
 
-  // ফর্ম খোলা/ফোকাস হওয়া মাত্র সার্ভারকে জাগিয়ে দেয় (hosting ঘুমিয়ে থাকলে) — পূরণ শেষ হওয়ার আগেই সে তৈরি
+  function load() {
+    try {
+      return JSON.parse(localStorage.getItem(OUTBOX)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function save(list) {
+    try {
+      localStorage.setItem(OUTBOX, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  function drop(id) {
+    var list = load().filter(function (m) {
+      return m.id !== id;
+    });
+    save(list);
+  }
+
+  // Wake the server up (if the host was sleeping) as soon as the form is
+  // opened or focused, so it is ready before the visitor finishes typing.
   var warmed = false;
   function warm() {
     if (warmed) return;
     warmed = true;
-    try { fetch(form.action.replace(/send$/, "ping"), { mode: "no-cors", cache: "no-store" }); } catch (e) {}
+    try {
+      fetch(form.action.replace(/send$/, "ping"), {
+        mode: "no-cors",
+        cache: "no-store",
+      });
+    } catch (e) {}
   }
   form.addEventListener("focusin", warm);
   form.addEventListener("pointerdown", warm);
   if ("IntersectionObserver" in window) {
-    new IntersectionObserver(function (en, ob) {
-      if (en[0].isIntersecting) { warm(); ob.disconnect(); }
+    new IntersectionObserver(function (entries, observer) {
+      if (entries[0].isIntersecting) {
+        warm();
+        observer.disconnect();
+      }
     }).observe(form);
   }
 
   function updateCount() {
-    if (area && count) count.textContent = area.value.length + " / " + (area.maxLength > 0 ? area.maxLength : 1000);
+    if (area && count) {
+      var max = area.maxLength > 0 ? area.maxLength : 1000;
+      count.textContent = area.value.length + " / " + max;
+    }
   }
-  if (area) { area.addEventListener("input", updateCount); updateCount(); }
+  if (area) {
+    area.addEventListener("input", updateCount);
+    updateCount();
+  }
 
   function touch(el) {
-    var f = el.closest(".es-field");
-    if (f) f.classList.add("touched");
+    var field = el.closest(".es-field");
+    if (field) field.classList.add("touched");
   }
   form.querySelectorAll("input,textarea").forEach(function (el) {
-    el.addEventListener("blur", function () { touch(el); });
+    el.addEventListener("blur", function () {
+      touch(el);
+    });
   });
-  form.addEventListener("invalid", function (e) { touch(e.target); }, true);
+  function onInvalid(e) {
+    touch(e.target);
+  }
+  form.addEventListener("invalid", onInvalid, true);
 
-  // একই submissionId দিয়ে বারবার পাঠানো নিরাপদ — সার্ভার duplicate ধরে ফেলে
+  // Re-sending the same submissionId is safe (duplicates are dropped).
+  function onResponse(res) {
+    if (res.ok) return { ok: true };
+    // 400-403 = bad form or key, retrying will not help
+    var isFinal = res.status >= 400 && res.status <= 403;
+    return { ok: false, final: isFinal, status: res.status };
+  }
+  function onNetworkError() {
+    return { ok: false, final: false, status: 0 };
+  }
   function post(item) {
-    var body = typeof item.body === "string" ? new URLSearchParams(item.body) : item.body;
+    var body = item.body;
+    if (typeof body === "string") body = new URLSearchParams(body);
     return fetch(item.action, {
       method: "POST",
       headers: { Accept: "application/json" },
       body: body,
-      keepalive: body.toString().length < 60000
-    }).then(function (res) {
-      if (res.ok) return { ok: true };
-      // 400-403 = ফর্ম/কী ঠিক নেই, আবার চেষ্টা করে লাভ নেই
-      return { ok: false, final: res.status >= 400 && res.status <= 403, status: res.status };
-    }, function () { return { ok: false, final: false, status: 0 }; });
+      keepalive: body.toString().length < 60000,
+    }).then(onResponse, onNetworkError);
   }
 
   function deliver(item, n) {
     return post(item).then(function (r) {
-      if (r.ok || r.final) { drop(item.id); return r; }
-      if (n >= RETRY.length) return r; // outbox এ থাকে, পরের বার পেজ খুললে আবার চেষ্টা হবে
-      return new Promise(function (ok) { setTimeout(ok, RETRY[n]); }).then(function () {
+      if (r.ok || r.final) {
+        drop(item.id);
+        return r;
+      }
+      // Out of retries: it stays in the outbox, retried on the next visit.
+      if (n >= RETRY.length) return r;
+      return new Promise(function (resolve) {
+        setTimeout(resolve, RETRY[n]);
+      }).then(function () {
         return deliver(item, n + 1);
       });
     });
   }
 
-  // আগের বার যা পাঠানো যায়নি (ট্যাব বন্ধ/অফলাইন ছিল) পেজ খুলতেই আবার পাঠায়
+  // Anything that could not be sent last time (tab closed or offline) is
+  // sent again as soon as the page opens.
   var DAY = 24 * 3600 * 1000;
   load().forEach(function (item) {
     if (Date.now() - item.t > DAY) return drop(item.id);
@@ -165,17 +222,27 @@ export const ES_JS = `(function () {
   function showSent() {
     form.reset();
     updateCount();
-    form.querySelectorAll(".touched").forEach(function (f) { f.classList.remove("touched"); });
+    form.querySelectorAll(".touched").forEach(function (field) {
+      field.classList.remove("touched");
+    });
     form.classList.add("is-sent");
     form.querySelector(".es-done").focus();
   }
+
   function fail(r) {
-    msg.textContent = r.status === 0 ? "Network error. Please check your connection."
-      : r.status === 429 ? "Too many messages. Please try again in a little while."
-      : r.status === 401 || r.status === 403 ? "This form is not set up correctly."
-      : "Something went wrong. Please try again.";
+    if (r.status === 0) {
+      msg.textContent = "Network error. Please check your connection.";
+    } else if (r.status === 429) {
+      msg.textContent =
+        "Too many messages. Please try again in a little while.";
+    } else if (r.status === 401 || r.status === 403) {
+      msg.textContent = "This form is not set up correctly.";
+    } else {
+      msg.textContent = "Something went wrong. Please try again.";
+    }
     msg.classList.add("show");
   }
+
   function idle() {
     form.classList.remove("is-busy");
     btn.disabled = false;
@@ -192,25 +259,39 @@ export const ES_JS = `(function () {
     var data = new FormData(form);
     var id = uid();
     data.set("submissionId", id);
-    // কোন পেজ থেকে ফর্ম ভরা হলো (পুরো লিংক, localhost হলে port সহ) — ইমেইলে ও dashboard এ দেখায়
+    // Full link of the page the form was filled on (port included)
     data.set("pageUrl", window.location.href);
-    var item = { id: id, action: form.action, body: new URLSearchParams(data), t: Date.now() };
-    // সার্ভার ঘুমন্ত থাকলে জাগতে সময় লাগতে পারে — মেসেজটা আগে ফোনে/ব্রাউজারে সুরক্ষিত রাখি
+    var item = {
+      id: id,
+      action: form.action,
+      body: new URLSearchParams(data),
+      t: Date.now(),
+    };
+    // Keep the message on the device first, in case the server is asleep.
     var list = load();
-    list.push({ id: id, action: item.action, body: item.body.toString(), t: item.t });
+    list.push({
+      id: id,
+      action: item.action,
+      body: item.body.toString(),
+      t: item.t,
+    });
     save(list);
 
     var settled = false;
     function finish(r) {
       if (settled) return;
       settled = true;
-      if (r.ok) showSent(); else fail(r);
+      if (r.ok) showSent();
+      else fail(r);
       idle();
     }
 
-    // সাধারণত ১-২ সেকেন্ডেই সার্ভার সাড়া দেয়। ২.৫ সেকেন্ডে না দিলে ভিজিটরকে আটকে না রেখে
-    // "পাঠানো হয়েছে" দেখাই; আসল পাঠানো ব্যাকগ্রাউন্ডে retry সহ চলতে থাকে।
-    var timer = setTimeout(function () { finish({ ok: true }); }, 2500);
+    // The server usually answers in 1-2 seconds. After 2.5 seconds the
+    // visitor is not kept waiting: we show "sent" while the real delivery
+    // carries on in the background with retries.
+    var timer = setTimeout(function () {
+      finish({ ok: true });
+    }, 2500);
     deliver(item, 0).then(function (r) {
       clearTimeout(timer);
       if (!settled) finish(r);
@@ -225,66 +306,227 @@ export const ES_JS = `(function () {
 // Preview তে আসল request যায় না — শুধু সফল হওয়ার অ্যানিমেশন দেখায়
 const PREVIEW_JS = `(function(){var f=document.getElementById("es-form");var a=f.querySelector("textarea"),c=f.querySelector(".es-count");function u(){if(a&&c)c.textContent=a.value.length+" / "+(a.maxLength>0?a.maxLength:1000)}if(a){a.addEventListener("input",u);u()}f.addEventListener("submit",function(e){e.preventDefault();f.classList.add("is-sent");f.querySelector(".es-done").focus()});f.querySelectorAll("input,textarea").forEach(function(el){el.addEventListener("blur",function(){var p=el.closest(".es-field");if(p)p.classList.add("touched")})});f.querySelector(".es-again").addEventListener("click",function(){f.classList.remove("is-sent")})})();`;
 
-const ICON = {
-    user: `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>`,
-    mail: `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>`,
-    tag: `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.2"/></svg>`,
-    chat: `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/></svg>`
+/* ------------------------------------------------------------------ */
+/* Prettier-style HTML helpers                                         */
+/* ------------------------------------------------------------------ */
+
+const WIDTH = 80;
+
+// Prints one tag the way Prettier does: on a single line when it fits in
+// 80 columns, otherwise one attribute per line with the closing bracket
+// on its own line.
+const tag = (pad, name, attrs, selfClose = false) => {
+    const one = `${pad}<${name} ${attrs.join(" ")}${selfClose ? " />" : ">"}`;
+    if (one.length <= WIDTH) return one;
+    const lines = attrs.map(a => `${pad}  ${a}`).join("\n");
+    return `${pad}<${name}\n${lines}\n${pad}${selfClose ? "/>" : ">"}`;
 };
 
-export const buildForm = ({ key, action, theme, logo, home }) => {
-    const onErr = `if(this.dataset.f){this.style.display='none'}else{this.dataset.f=1;this.src='${LOGO_FALLBACK}'}`;
-    return `<form class="es-form" id="es-form" data-theme="${theme}" action="${action}" method="POST">
+// Cloudinary logo; if it fails to load, switch once to the small fallback,
+// and if that fails too, hide the image so no broken icon is ever shown.
+const ON_ERROR =
+    "if(this.dataset.f){this.style.display='none'}else{this.dataset.f=1;this.src=this.dataset.fb}";
+
+const logoImg = (pad, logo, attrs) =>
+    tag(
+        pad,
+        "img",
+        [
+            ...attrs.before,
+            `src="${logo}"`,
+            `data-fb="${LOGO_FALLBACK}"`,
+            ...attrs.after,
+            `onerror="${ON_ERROR}"`
+        ],
+        true
+    );
+
+const ICON = {
+    user: [
+        `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true">`,
+        `  <circle cx="12" cy="8" r="4" />`,
+        `  <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />`,
+        `</svg>`
+    ],
+    mail: [
+        `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true">`,
+        `  <rect x="3" y="5" width="18" height="14" rx="3" />`,
+        `  <path d="m4 7 8 6 8-6" />`,
+        `</svg>`
+    ],
+    tag: [
+        `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true">`,
+        `  <path d="M3 12V4h8l10 10-8 8L3 12z" />`,
+        `  <circle cx="7.5" cy="8.5" r="1.2" />`,
+        `</svg>`
+    ],
+    chat: [
+        `<svg class="es-ico" viewBox="0 0 24 24" aria-hidden="true">`,
+        `  <path d="M4 5h16v11H9l-5 4V5z" />`,
+        `</svg>`
+    ]
+};
+
+const icon = (name, pad) => ICON[name].map(l => pad + l).join("\n");
+
+const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
+
+export const buildForm = ({ key, action, theme, logo, home }) => `${tag(
+    "",
+    "form",
+    [
+        `class="es-form"`,
+        `id="es-form"`,
+        `data-theme="${theme}"`,
+        `action="${action}"`,
+        `method="POST"`
+    ]
+)}
   <div class="es-head">
-    <img class="es-logo" src="${logo}" alt="Email Sender" width="104" height="104" onerror="${onErr}">
+${logoImg("    ", logo, {
+    before: [`class="es-logo"`],
+    after: [`alt="Email Sender"`, `width="104"`, `height="104"`]
+})}
     <h2 class="es-title">Get in touch</h2>
     <p class="es-sub">Send us a message and we will reply soon.</p>
   </div>
 
   <div class="es-body">
-    <input type="hidden" name="access_key" value="${key}">
-    <input type="text" name="botcheck" class="es-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+${tag("    ", "input", [`type="hidden"`, `name="access_key"`, `value="${key}"`], true)}
+${tag(
+    "    ",
+    "input",
+    [
+        `type="text"`,
+        `name="botcheck"`,
+        `class="es-hp"`,
+        `tabindex="-1"`,
+        `autocomplete="off"`,
+        `aria-hidden="true"`
+    ],
+    true
+)}
 
-    <div class="es-field" style="--d:.15s">
+    <div class="es-field" style="--d: 0.15s">
       <label for="es-name">Name</label>
-      <div class="es-ctl">${ICON.user}<input id="es-name" type="text" name="name" placeholder="John Doe" autocomplete="name" required><small class="es-hint">Please enter your name</small></div>
+      <div class="es-ctl">
+${icon("user", "        ")}
+${tag(
+    "        ",
+    "input",
+    [
+        `id="es-name"`,
+        `type="text"`,
+        `name="name"`,
+        `placeholder="John Doe"`,
+        `autocomplete="name"`,
+        `required`
+    ],
+    true
+)}
+        <small class="es-hint">Please enter your name</small>
+      </div>
     </div>
-    <div class="es-field" style="--d:.22s">
+
+    <div class="es-field" style="--d: 0.22s">
       <label for="es-email">Email</label>
-      <div class="es-ctl">${ICON.mail}<input id="es-email" type="email" name="email" placeholder="john@example.com" autocomplete="email" required><small class="es-hint">Enter a valid email address</small></div>
+      <div class="es-ctl">
+${icon("mail", "        ")}
+${tag(
+    "        ",
+    "input",
+    [
+        `id="es-email"`,
+        `type="email"`,
+        `name="email"`,
+        `placeholder="john@example.com"`,
+        `autocomplete="email"`,
+        `required`
+    ],
+    true
+)}
+        <small class="es-hint">Enter a valid email address</small>
+      </div>
     </div>
-    <div class="es-field" style="--d:.29s">
+
+    <div class="es-field" style="--d: 0.29s">
       <label for="es-subject">Subject</label>
-      <div class="es-ctl">${ICON.tag}<input id="es-subject" type="text" name="subject" placeholder="How can we help?" required><small class="es-hint">Add a short subject</small></div>
+      <div class="es-ctl">
+${icon("tag", "        ")}
+${tag(
+    "        ",
+    "input",
+    [
+        `id="es-subject"`,
+        `type="text"`,
+        `name="subject"`,
+        `placeholder="How can we help?"`,
+        `required`
+    ],
+    true
+)}
+        <small class="es-hint">Add a short subject</small>
+      </div>
     </div>
-    <div class="es-field" style="--d:.36s">
-      <label for="es-message">Message <span class="es-count">0 / 1000</span></label>
-      <div class="es-ctl ta">${ICON.chat}<textarea id="es-message" name="message" rows="5" maxlength="1000" placeholder="Write your message..." required></textarea><small class="es-hint">Write a few words</small></div>
+
+    <div class="es-field" style="--d: 0.36s">
+      <label for="es-text">
+        Message
+        <span class="es-count">0 / 1000</span>
+      </label>
+      <div class="es-ctl ta">
+${icon("chat", "        ")}
+${tag("        ", "textarea", [
+    `id="es-text"`,
+    `name="message"`,
+    `rows="5"`,
+    `maxlength="1000"`,
+    `placeholder="Write your message..."`,
+    `required`
+])}</textarea>
+        <small class="es-hint">Write a few words</small>
+      </div>
     </div>
 
     <p class="es-msg" role="alert"></p>
-    <button type="submit" class="es-btn"><span class="es-btn-t">Send message</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 21 4l-7.5 17-2.4-7.1L3 11.5z"/></svg></button>
+    <button type="submit" class="es-btn">
+      <span class="es-btn-t">Send message</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 11.5 21 4l-7.5 17-2.4-7.1L3 11.5z" />
+      </svg>
+    </button>
   </div>
 
   <div class="es-done" role="status" aria-live="polite" tabindex="-1">
-    <div class="es-sparks" aria-hidden="true"><i style="--a:0deg"></i><i style="--a:45deg"></i><i style="--a:90deg"></i><i style="--a:135deg"></i><i style="--a:180deg"></i><i style="--a:225deg"></i><i style="--a:270deg"></i><i style="--a:315deg"></i></div>
-    <svg class="es-tick" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 14-16"/></svg>
+    <div class="es-sparks" aria-hidden="true">
+${SPARKS.map(a => `      <i style="--a: ${a}deg"></i>`).join("\n")}
+    </div>
+    <svg class="es-tick" viewBox="0 0 52 52" aria-hidden="true">
+      <circle cx="26" cy="26" r="23" />
+      <path d="M15 27l8 8 14-16" />
+    </svg>
     <h3>Message sent!</h3>
     <p>Thank you for reaching out. We will get back to you soon.</p>
     <button type="button" class="es-again">Send another message</button>
   </div>
 
-  <a class="es-badge" href="${home}" target="_blank" rel="noopener">
-    Powered by <img src="${logo}" alt="" onerror="${onErr}"> <b>Email <span>Sender</span></b>
+${tag("  ", "a", [
+    `class="es-badge"`,
+    `href="${home}"`,
+    `target="_blank"`,
+    `rel="noopener"`
+])}
+    Powered by
+${logoImg("    ", logo, { before: [], after: [`alt=""`] })}
+    <b>Email <span>Sender</span></b>
   </a>
 </form>`;
-};
 
-// অন্য সাইটে বসানো হবে, তাই সবসময় পুরো (absolute) URL
+// Always a full (absolute) URL, because the form is pasted on other sites
 export const endpoint = () =>
     new URL(`${BASE_URL}/mail/send`, window.location.origin).href;
 
-// ড্যাশবোর্ডের ট্যাব: ওয়েবসাইট বানানোর সব জনপ্রিয় ভাষা/ফ্রেমওয়ার্ক
+// Dashboard tabs: the most popular languages / frameworks for building sites
 export const SNIPPET_TABS = [
     { id: "styled", label: "HTML form" },
     { id: "plain", label: "Plain HTML" },
@@ -302,31 +544,53 @@ export const SNIPPET_TABS = [
     { id: "curl", label: "cURL" }
 ];
 
+// The stylesheet is stored minified (it is also used by the live preview).
+// For the copy box we expand it once, the way Prettier would print it.
+let prettyCss = "";
+const getPrettyCss = () => {
+    if (!prettyCss) prettyCss = formatCss(ES_CSS);
+    return prettyCss;
+};
+
+// Everything inside <style> / <script> is indented one level, like Prettier
+const indent = (text, n) =>
+    text
+        .split("\n")
+        .map(l => (l ? " ".repeat(n) + l : l))
+        .join("\n");
+
 export function buildSnippet(tab, key, theme) {
     const url = endpoint();
     if (tab === "styled") {
         return `<!-- Email Sender contact form -->
 <style>
-${ES_CSS}
+${indent(getPrettyCss(), 2)}
 </style>
 
 ${buildForm({ key, action: url, theme, logo: LOGO_URL, home: window.location.origin })}
 
 <script>
-${ES_JS}
+${indent(ES_JS, 2)}
 </script>`;
     }
     if (tab === "plain") {
         return `<!-- Email Sender contact form (unstyled: add your own CSS) -->
-<form action="${url}" method="POST">
-  <input type="hidden" name="access_key" value="${key}">
-  <input type="hidden" name="redirect" value="https://your-site.com/thank-you">
-  <input type="hidden" name="pageUrl" id="es-page-url">
-  <input type="text" name="botcheck" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off" aria-hidden="true">
+${tag("", "form", [`action="${url}"`, `method="POST"`])}
+${tag("  ", "input", [`type="hidden"`, `name="access_key"`, `value="${key}"`], true)}
+${tag("  ", "input", [`type="hidden"`, `name="redirect"`, `value="https://your-site.com/thank-you"`], true)}
+  <input type="hidden" name="pageUrl" id="es-page-url" />
+  <input
+    type="text"
+    name="botcheck"
+    style="position: absolute; left: -9999px; opacity: 0"
+    tabindex="-1"
+    autocomplete="off"
+    aria-hidden="true"
+  />
 
-  <label>Name <input type="text" name="name" required></label>
-  <label>Email <input type="email" name="email" required></label>
-  <label>Subject <input type="text" name="subject" required></label>
+  <label>Name <input type="text" name="name" required /></label>
+  <label>Email <input type="email" name="email" required /></label>
+  <label>Subject <input type="text" name="subject" required /></label>
   <label>Message <textarea name="message" rows="5" required></textarea></label>
 
   <button type="submit">Send message</button>
@@ -340,14 +604,17 @@ ${ES_JS}
     if (tab === "js") {
         return `const res = await fetch("${url}", {
   method: "POST",
-  headers: { "Content-Type": "application/json", "x-api-key": "${key}" },
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": "${key}",
+  },
   body: JSON.stringify({
     name: "John Doe",
     email: "john@example.com",
     subject: "Hello",
     message: "Sent from my app",
-    pageUrl: window.location.href // full link of the page (optional)
-  })
+    pageUrl: window.location.href, // full link of the page (optional)
+  }),
 });
 const data = await res.json();
 console.log(res.status, data.message);`;
@@ -366,11 +633,14 @@ export default function ContactForm() {
     try {
       const res = await fetch("${url}", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": "${key}" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": "${key}",
+        },
         body: JSON.stringify({
           ...Object.fromEntries(new FormData(form)),
-          pageUrl: window.location.href // full link of the page (optional)
-        })
+          pageUrl: window.location.href, // full link of the page (optional)
+        }),
       });
       if (!res.ok) throw new Error("Request failed: " + res.status);
       form.reset();
@@ -397,7 +667,7 @@ export default function ContactForm() {
     }
     if (tab === "next") {
         return `// Next.js (App Router) — app/api/contact/route.js
-// The API key stays on the server (put it in .env.local), never in the browser.
+// The API key stays on the server (.env.local), never in the browser.
 export async function POST(req) {
   const { name, email, subject, message, pageUrl } = await req.json();
 
@@ -405,9 +675,9 @@ export async function POST(req) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": process.env.EMAIL_SENDER_KEY
+      "x-api-key": process.env.EMAIL_SENDER_KEY,
     },
-    body: JSON.stringify({ name, email, subject, message, pageUrl })
+    body: JSON.stringify({ name, email, subject, message, pageUrl }),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -418,10 +688,14 @@ export async function POST(req) {
 // EMAIL_SENDER_KEY=${key}
 
 // In your page/component:
-// await fetch("/api/contact", { method: "POST",
+// await fetch("/api/contact", {
+//   method: "POST",
 //   headers: { "Content-Type": "application/json" },
-//   body: JSON.stringify({ name, email, subject, message,
-//     pageUrl: window.location.href }) });`;
+//   body: JSON.stringify({
+//     name, email, subject, message,
+//     pageUrl: window.location.href,
+//   }),
+// });`;
     }
     if (tab === "node") {
         return `// Node.js 18+ (built-in fetch) + Express
@@ -433,12 +707,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.post("/contact", async (req, res) => {
-  const { name, email, subject, message, pageUrl } = req.body; // pageUrl: send window.location.href from your form
+  // pageUrl: send window.location.href from your form
+  const { name, email, subject, message, pageUrl } = req.body;
   try {
     const r = await fetch("${url}", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": "${key}" },
-      body: JSON.stringify({ name, email, subject, message, pageUrl })
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": "${key}",
+      },
+      body: JSON.stringify({ name, email, subject, message, pageUrl }),
     });
     res.status(r.status).json(await r.json());
   } catch (err) {
@@ -448,6 +726,7 @@ app.post("/contact", async (req, res) => {
 
 app.listen(3000, () => console.log("http://localhost:3000"));`;
     }
+
     if (tab === "php") {
         return `<?php
 // contact.php — point your HTML form to this file (method="POST")

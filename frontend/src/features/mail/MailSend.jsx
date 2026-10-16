@@ -14,6 +14,7 @@ import {
     Skeleton
 } from "../../components/ui/Bits";
 import { fmtBytes, maskKey } from "../../lib/format";
+import { highlight, TAB_LANG } from "../../lib/highlight";
 import {
     SNIPPET_TABS as TABS,
     buildSnippet,
@@ -61,6 +62,22 @@ export default function MailSend() {
     );
     const previewDark =
         formTheme === "dark" || (formTheme === "auto" && theme === "dark");
+
+    // VS Code style colours for the code box (the text is escaped by highlight)
+    const lang = TAB_LANG[tab] || "js";
+    const shownHtml = useMemo(
+        () => highlight(shownSnippet, lang),
+        [shownSnippet, lang]
+    );
+
+    const respLang = result?.body ? "json" : "text";
+    const responseHtml = useMemo(() => {
+        if (!result) return "";
+        const text = result.body
+            ? JSON.stringify(result.body, null, 2)
+            : result.raw || "(empty)";
+        return highlight(text, respLang);
+    }, [result, respLang]);
 
     async function send(e) {
         e.preventDefault();
@@ -182,7 +199,13 @@ export default function MailSend() {
                                     successMsg="Code copied with your real key"
                                 />
                             </div>
-                            <pre>{shownSnippet}</pre>
+                            <pre className="code-pre" data-lang={lang}>
+                                <code
+                                    dangerouslySetInnerHTML={{
+                                        __html: shownHtml
+                                    }}
+                                />
+                            </pre>
                         </div>
                         <p className="help">
                             The key is masked on screen. Copying gives you the
@@ -371,14 +394,12 @@ export default function MailSend() {
                                     <div className="code-bar">
                                         <span>Response body</span>
                                     </div>
-                                    <pre>
-                                        {result.body
-                                            ? JSON.stringify(
-                                                  result.body,
-                                                  null,
-                                                  2
-                                              )
-                                            : result.raw || "(empty)"}
+                                    <pre className="code-pre" data-lang={respLang}>
+                                        <code
+                                            dangerouslySetInnerHTML={{
+                                                __html: responseHtml
+                                            }}
+                                        />
                                     </pre>
                                 </div>
                             </div>

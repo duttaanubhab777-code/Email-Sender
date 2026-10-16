@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import "./styles/index.css"; // design tokens + shared primitives (button, form, card, modal ...)
 import "./styles/app.css"; // console layout + page styles (shell, auth, dashboard, admin, kill switch ...)
 import "./styles/extra.css"; // blue + orange polish: animated backdrop, loader, watermark
+import "./styles/code.css"; // VS Code Dark+/Light+ colours for code boxes (must come after extra.css)
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
 import { ThemeProvider } from "./context/ThemeContext";
