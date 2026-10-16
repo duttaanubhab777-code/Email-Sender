@@ -78,7 +78,6 @@ export const ES_CSS = `.es-form{--es-bg:#fff;--es-bd:#dde7f6;--es-tx:#0a1b33;--e
 @media (max-width:420px){.es-form{padding:26px 18px 18px;border-radius:20px}}
 @media (prefers-reduced-motion:reduce){.es-form,.es-form *,.es-form::before{animation-duration:.001ms!important;transition-duration:.001ms!important}}`;
 
-
 // The copy-paste script of the contact form. It is written in Prettier style
 // (2 spaces, double quotes, semicolons, 80 columns) because this exact text is
 // what the "Copy code" box shows and copies.

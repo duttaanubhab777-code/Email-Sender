@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 300" width="100%" role="img" aria-label="Animated journey of one message through Email Sender">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07162e"/><stop offset="1" stop-color="#0d2549"/></linearGradient>
+<linearGradient id="line" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1d8bff"/><stop offset="1" stop-color="#ff7a1a"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="930" height="300" rx="20" fill="url(#bg)"/>
+<text x="465.0" y="38" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="20" font-weight="700" fill="#e8f0ff">The journey of one message</text>
+<line x1="90" y1="130" x2="840" y2="130" stroke="url(#line)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 10"><animate attributeName="stroke-dashoffset" from="0" to="-48" dur="2s" repeatCount="indefinite"/></line>
+<circle cx="90" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="0.0s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="0.0s" repeatCount="indefinite"/></circle>
+<circle cx="90" cy="130" r="30" fill="#0b1f3d" stroke="#3d94ff" stroke-width="2.5"/>
+<text x="90" y="139" text-anchor="middle" font-size="26">🧑‍💻</text>
+<text x="90" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">Visitor</text>
+<text x="90" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">contact form</text>
+<circle cx="240" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="0.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="0.4s" repeatCount="indefinite"/></circle>
+<circle cx="240" cy="130" r="30" fill="#0b1f3d" stroke="#3d94ff" stroke-width="2.5"/>
+<text x="240" y="139" text-anchor="middle" font-size="26">⚙️</text>
+<text x="240" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">Email Sender</text>
+<text x="240" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">Node + Express</text>
+<circle cx="390" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="0.8s" repeatCount="indefinite"/></circle>
+<circle cx="390" cy="130" r="30" fill="#0b1f3d" stroke="#ff7a1a" stroke-width="2.5"/>
+<text x="390" y="139" text-anchor="middle" font-size="26">🗄️</text>
+<text x="390" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">MongoDB</text>
+<text x="390" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">saved first</text>
+<circle cx="540" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="1.2000000000000002s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="1.2000000000000002s" repeatCount="indefinite"/></circle>
+<circle cx="540" cy="130" r="30" fill="#0b1f3d" stroke="#3d94ff" stroke-width="2.5"/>
+<text x="540" y="139" text-anchor="middle" font-size="26">🚉</text>
+<text x="540" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">Mail Relay</text>
+<text x="540" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">Flask · PythonAnywhere</text>
+<circle cx="690" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="1.6s" repeatCount="indefinite"/></circle>
+<circle cx="690" cy="130" r="30" fill="#0b1f3d" stroke="#3d94ff" stroke-width="2.5"/>
+<text x="690" y="139" text-anchor="middle" font-size="26">✉️</text>
+<text x="690" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">Gmail</text>
+<text x="690" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">SMTP · App Password</text>
+<circle cx="840" cy="130" r="34" fill="#1d8bff" opacity=".18"><animate attributeName="r" values="34;42;34" dur="2.4s" begin="2.0s" repeatCount="indefinite"/><animate attributeName="opacity" values=".18;.35;.18" dur="2.4s" begin="2.0s" repeatCount="indefinite"/></circle>
+<circle cx="840" cy="130" r="30" fill="#0b1f3d" stroke="#ff7a1a" stroke-width="2.5"/>
+<text x="840" y="139" text-anchor="middle" font-size="26">📬</text>
+<text x="840" y="186" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="14" font-weight="700" fill="#e8f0ff">Your Inbox</text>
+<text x="840" y="204" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="11" fill="#93a9cf">message arrives</text>
+<g filter="url(#glow)"><g><rect x="-15" y="-11" width="30" height="22" rx="4" fill="#ffb347" stroke="#fff" stroke-width="1.5"/><polyline points="-15,-11 0,2 15,-11" fill="none" stroke="#fff" stroke-width="1.5"/><animateMotion dur="14s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;0.2;0.2;0.4;0.4;0.6;0.6;0.8;0.8;1;1" keyTimes="0;0.06;0.16;0.26;0.36;0.46;0.56;0.66;0.76;0.86;0.94;1" path="M90,78 L840,78"/></g></g>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">1 · A visitor fills in your contact form and presses Send<animate attributeName="opacity" values="1;1;0;0" keyTimes="0.0;0.12;0.14;1.0" dur="14s" repeatCount="indefinite"/></text>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">2 · Email Sender checks the API key, the monthly limit and the spam trap<animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0.0;0.13;0.15;0.28;0.3;1.0" dur="14s" repeatCount="indefinite"/></text>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">3 · The message is SAVED in MongoDB first, so it can never be lost<animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0.0;0.29;0.31;0.38;0.4;1.0" dur="14s" repeatCount="indefinite"/></text>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">4 · The Mail Relay is called over HTTPS with a private secret<animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0.0;0.39;0.41;0.48;0.5;1.0" dur="14s" repeatCount="indefinite"/></text>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">5 · The relay signs in to Gmail with an App Password and sends<animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0.0;0.49;0.51;0.6;0.62;1.0" dur="14s" repeatCount="indefinite"/></text>
+<text x="465.0" y="262" text-anchor="middle" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="600" fill="#ffd9b0" opacity="0">6 · The message lands in your inbox and its status becomes SENT<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0.0;0.61;0.63;0.98;1" dur="14s" repeatCount="indefinite"/></text>
+</svg>
