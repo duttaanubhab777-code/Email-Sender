@@ -5,6 +5,8 @@ import { getDashboard } from "../../services/api";
 import useAsync from "../../hooks/useAsync";
 import Icon from "../../components/Icons";
 import EmailDetailDrawer from "../../components/ui/EmailDetail";
+import ActivityChart from "../../components/ActivityChart";
+import QuotaRing from "../../components/QuotaRing";
 import {
     Badge,
     Empty,
@@ -85,7 +87,6 @@ export default function Dashboard() {
         [subs, start]
     );
     const days = useMemo(() => buildDays(subs, range), [subs, range]);
-    const maxDay = Math.max(1, ...days.map(d => d.count));
     const rangeTotal = days.reduce((a, d) => a + d.count, 0);
 
     const filtered = useMemo(() => {
@@ -113,7 +114,6 @@ export default function Dashboard() {
     const pct = limit
         ? Math.min(100, Math.round((usedMonth / limit) * 100))
         : 0;
-    const tone = pct >= 90 ? "bad" : pct >= 70 ? "warn" : "";
     const first = (data.fullName || user?.fullName || "").split(" ")[0];
 
     return (
@@ -214,29 +214,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="card-body">
-                        <div
-                            className="chart"
-                            role="img"
-                            aria-label={`Emails per day for the last ${range} days`}
-                        >
-                            {days.map(d => (
-                                <div
-                                    key={d.key}
-                                    className={`bar ${d.count === 0 ? "zero" : ""}`}
-                                    tabIndex={0}
-                                >
-                                    <span className="tip">
-                                        {d.count} ·{" "}
-                                        {fmtDate(d.date).replace(/ \d{4}$/, "")}
-                                    </span>
-                                    <i
-                                        style={{
-                                            height: `${d.count === 0 ? 0 : Math.max(6, (d.count / maxDay) * 100)}%`
-                                        }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        <ActivityChart days={days} />
                         <div className="chart-x">
                             <span>
                                 {fmtDate(days[0].date).replace(/ \d{4}$/, "")}
@@ -254,21 +232,11 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="card-body">
-                        <div className="quota-top">
-                            <b>{pct}%</b>
-                            <span className="muted">
-                                {fmtNum(usedMonth)} of {fmtNum(limit)} emails
-                            </span>
-                        </div>
-                        <div
-                            className={`meter ${tone}`}
-                            role="progressbar"
-                            aria-valuenow={pct}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                        >
-                            <i style={{ width: `${pct}%` }} />
-                        </div>
+                        <QuotaRing
+                            percent={pct}
+                            used={usedMonth}
+                            limit={limit}
+                        />
                         {pct >= 90 && (
                             <p className="help err" style={{ marginTop: 10 }}>
                                 You're close to your limit. New emails are

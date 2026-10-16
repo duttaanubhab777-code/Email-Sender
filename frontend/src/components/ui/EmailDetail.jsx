@@ -129,8 +129,8 @@ export default function EmailDetailDrawer({ m, onClose }) {
             {m && (
                 <div className="ed">
                     {/* ---- শিরোনাম + অবস্থা ---- */}
-                    <section className={`ed-hero ${ok || queued ? "" : "failed"}`}>
-                        <span className={`ed-status ${ok || queued ? "" : "failed"}`}>
+                    <section className={`ed-hero ${ok ? "ok" : queued ? "queued" : "failed"}`}>
+                        <span className={`ed-status ${ok ? "ok" : queued ? "queued" : "failed"}`}>
                             <Icon name={ok ? "checkCircle" : queued ? "clock" : "xCircle"} size={14} />
                             {ok ? "Delivered" : queued ? "Delivering in background" : "Delivery failed"}
                         </span>
