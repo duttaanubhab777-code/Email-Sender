@@ -3,6 +3,7 @@ import { getAdminStats } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import useAsync from "../../hooks/useAsync";
 import CountUp from "../../components/CountUp";
+import DocsStatsCard from "../../components/DocsStatsCard";
 import Icon from "../../components/Icons";
 import {
     Callout,
@@ -142,6 +143,8 @@ export default function AdminDashboard() {
                         </div>
                     ))}
                 </section>
+
+                <DocsStatsCard />
 
                 <Callout icon="info">
                     {isSuper ? (

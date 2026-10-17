@@ -1,0 +1,113 @@
+/* Admin overview — "Documentation book" card (PDF download counter) */
+.docs-card {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.docs-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.docs-card-head h3 {
+    margin: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.docs-card-head p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--muted, #5a6b85);
+}
+.docs-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.docs-card-err {
+    color: var(--danger, #c4262e);
+    margin: 0;
+}
+.docs-card-stats {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 10px;
+}
+.docs-card-stats .big,
+.docs-card-stats .mini {
+    border: 1px solid var(--line, #e0e8f5);
+    background: var(--panel-2, #f8fbff);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.docs-card-stats .big .lab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted, #5a6b85);
+}
+.docs-card-stats .big .val {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.1;
+    background: var(--grad-brand, linear-gradient(110deg, #0b57c4, #1d8bff 38%, #ff7a1a));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+}
+.docs-card-stats .big .sub {
+    font-size: 12px;
+    color: var(--faint, #8796ad);
+}
+.docs-card-stats .mini b {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.docs-card-stats .mini span {
+    font-size: 12px;
+    color: var(--muted, #5a6b85);
+    font-weight: 600;
+}
+.docs-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 74px;
+}
+.docs-bars .bar {
+    flex: 1;
+    min-width: 0;
+    border-radius: 4px 4px 2px 2px;
+    background: linear-gradient(180deg, #ff7a1a, #1d8bff);
+}
+.docs-bars .bar[data-zero] {
+    background: var(--line-strong, #c3d1e6);
+    opacity: 0.55;
+}
+.docs-bars-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--faint, #8796ad);
+    margin-top: -8px;
+}
+@media (max-width: 560px) {
+    .docs-card-stats {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .docs-card-stats .big {
+        grid-column: 1 / -1;
+    }
+}

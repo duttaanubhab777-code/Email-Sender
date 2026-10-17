@@ -218,6 +218,11 @@ export const getAdminLoginHistory = (params, signal) =>
 export const getAdminEmails = (params, signal) =>
     request(`/admin/emails?${new URLSearchParams(params)}`, { signal });
 
+// /docs বইয়ের PDF কতবার নামানো হলো — শুধু Admin + Super Admin দেখতে পায়
+export const getDocsStats = signal => request("/docs/stats", { signal });
+// বইয়ের পেজের ঠিকানা: production এ "/docs", local এ backend এর পোর্টে
+export const DOCS_URL = `${BASE_URL.replace(/\/api\/v1\/?$/, "")}/docs`;
+
 // Notifications (প্রতিটা ইউজারের নিজের)
 export const getNotifications = (params, signal) =>
     request(`/notifications?${new URLSearchParams(params)}`, { signal });

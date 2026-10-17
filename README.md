@@ -4,25 +4,53 @@
 
 [![Typing SVG](https://readme-typing-svg.demolab.com/?font=Fira+Code&weight=600&size=22&duration=3000&pause=900&color=1D8BFF&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=100&lines=Your+Own+Formspree+%2F+Web3Forms+%E2%80%94+Built+From+Scratch;Save+First%2C+Send+Later+%E2%86%92+A+Message+Is+Never+Lost;OTP+Auth+%C2%B7+Admin+Approvals+%C2%B7+Kill+Switch+%C2%B7+Web+Push;Installable+PWA+%C2%B7+Dark%2FLight+%C2%B7+Mobile-First+UI)](https://git.io/typing-svg)
 
+<p><sub><b>⚡ CORE STACK</b></sub></p>
 <p>
-  <img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/>
-  <img src="https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express"/>
-  <img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB"/>
-  <img src="https://img.shields.io/badge/Mongoose-9-880000?style=for-the-badge&logo=mongoose&logoColor=white" alt="Mongoose"/>
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
-  <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite"/>
+  <img src="https://img.shields.io/badge/Node.js-22-215732?style=for-the-badge&logo=nodedotjs&logoColor=white&labelColor=339933" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Express-5-3C3C3C?style=for-the-badge&logo=express&logoColor=white&labelColor=000000" alt="Express"/>
+  <img src="https://img.shields.io/badge/MongoDB-Atlas-2E7D32?style=for-the-badge&logo=mongodb&logoColor=white&labelColor=47A248" alt="MongoDB"/>
+  <img src="https://img.shields.io/badge/Mongoose-9-C0392B?style=for-the-badge&logo=mongoose&logoColor=white&labelColor=880000" alt="Mongoose"/>
+  <img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=black&labelColor=61DAFB" alt="React"/>
+  <img src="https://img.shields.io/badge/Vite-8-BD34FE?style=for-the-badge&logo=vite&logoColor=white&labelColor=646CFF" alt="Vite"/>
 </p>
+<p><sub><b>🖥️ BACKEND PACKAGES · <code>backend/package.json</code></b></sub></p>
 <p>
-  <img src="https://img.shields.io/badge/Python-Flask_Relay-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Flask"/>
-  <img src="https://img.shields.io/badge/Gmail-SMTP-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Gmail"/>
-  <img src="https://img.shields.io/badge/JWT-httpOnly_Cookies-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT"/>
-  <img src="https://img.shields.io/badge/Cloudinary-Avatars-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white" alt="Cloudinary"/>
-  <img src="https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA"/>
-  <img src="https://img.shields.io/badge/Web_Push-VAPID-FF7A1A?style=for-the-badge" alt="Web Push"/>
+  <img src="https://img.shields.io/badge/bcrypt-6-1E6FD9?style=for-the-badge&logo=npm&logoColor=white&labelColor=004088" alt="bcrypt"/>
+  <img src="https://img.shields.io/badge/jsonwebtoken-9-D63AFF?style=for-the-badge&logo=jsonwebtokens&logoColor=white&labelColor=000000" alt="jsonwebtoken"/>
+  <img src="https://img.shields.io/badge/Helmet-8-14B8A6?style=for-the-badge&logo=npm&logoColor=white&labelColor=0D9488" alt="Helmet"/>
+  <img src="https://img.shields.io/badge/CORS-2-D97706?style=for-the-badge&logo=npm&logoColor=white&labelColor=F59E0B" alt="CORS"/>
+  <img src="https://img.shields.io/badge/cookie--parser-1-C28A4B?style=for-the-badge&logo=npm&logoColor=white&labelColor=7C4A21" alt="cookie-parser"/>
+  <img src="https://img.shields.io/badge/dotenv-18-B59F00?style=for-the-badge&logo=dotenv&logoColor=black&labelColor=ECD53F" alt="dotenv"/>
+  <img src="https://img.shields.io/badge/Multer-2-E5531F?style=for-the-badge&logo=npm&logoColor=white&labelColor=FF6C37" alt="Multer"/>
+  <img src="https://img.shields.io/badge/Nodemailer-10-168A56?style=for-the-badge&logo=npm&logoColor=white&labelColor=22B573" alt="Nodemailer"/>
+  <img src="https://img.shields.io/badge/web--push-3-E65C00?style=for-the-badge&logo=npm&logoColor=white&labelColor=FF7A1A" alt="web-push"/>
+  <img src="https://img.shields.io/badge/Cloudinary-2-1E2F9C?style=for-the-badge&logo=cloudinary&logoColor=white&labelColor=3448C5" alt="Cloudinary"/>
+  <img src="https://img.shields.io/badge/Aggregate_Paginate-v2-C0392B?style=for-the-badge&logo=mongoose&logoColor=white&labelColor=880000" alt="Aggregate Paginate"/>
+  <img src="https://img.shields.io/badge/Nodemon-3_·_dev-3C8D2A?style=for-the-badge&logo=nodemon&logoColor=white&labelColor=76D04B" alt="Nodemon"/>
 </p>
+<p><sub><b>🎨 FRONTEND PACKAGES · <code>frontend/package.json</code></b></sub></p>
 <p>
-  <img src="https://img.shields.io/badge/Render-Web_Service-46E3B7?style=for-the-badge&logo=render&logoColor=black" alt="Render"/>
-  <img src="https://img.shields.io/badge/PythonAnywhere-Mail_Relay-1D9FD7?style=for-the-badge&logo=pythonanywhere&logoColor=white" alt="PythonAnywhere"/>
+  <img src="https://img.shields.io/badge/React_DOM-19-20232A?style=for-the-badge&logo=react&logoColor=black&labelColor=61DAFB" alt="React DOM"/>
+  <img src="https://img.shields.io/badge/React_Router-7-8E2B2E?style=for-the-badge&logo=reactrouter&logoColor=white&labelColor=CA4245" alt="React Router"/>
+  <img src="https://img.shields.io/badge/Vite_React_Plugin-6-BD34FE?style=for-the-badge&logo=vite&logoColor=white&labelColor=646CFF" alt="Vite React Plugin"/>
+  <img src="https://img.shields.io/badge/Eruda-3_·_mobile_console-5B21B6?style=for-the-badge&logo=npm&logoColor=white&labelColor=7C3AED" alt="Eruda"/>
+  <img src="https://img.shields.io/badge/ESLint-10-8080F2?style=for-the-badge&logo=eslint&logoColor=white&labelColor=4B32C3" alt="ESLint"/>
+  <img src="https://img.shields.io/badge/ESLint_Hooks-7-4B32C3?style=for-the-badge&logo=eslint&logoColor=white&labelColor=6C5CE7" alt="ESLint Hooks"/>
+  <img src="https://img.shields.io/badge/ESLint_Refresh-0.5-4B32C3?style=for-the-badge&logo=eslint&logoColor=white&labelColor=6C5CE7" alt="ESLint Refresh"/>
+  <img src="https://img.shields.io/badge/@types/react-19-235A97?style=for-the-badge&logo=typescript&logoColor=white&labelColor=3178C6" alt="@types/react"/>
+  <img src="https://img.shields.io/badge/JavaScript-ES_Modules-323330?style=for-the-badge&logo=javascript&logoColor=black&labelColor=F7DF1E" alt="JavaScript"/>
+  <img src="https://img.shields.io/badge/Plain_CSS-no_UI_library-33A9DC?style=for-the-badge&logo=css3&logoColor=white&labelColor=1572B6" alt="Plain CSS"/>
+</p>
+<p><sub><b>🔌 SERVICES &amp; PLATFORM</b></sub></p>
+<p>
+  <img src="https://img.shields.io/badge/Python-Flask_Relay-FFD43B?style=for-the-badge&logo=python&logoColor=white&labelColor=3776AB" alt="Python"/>
+  <img src="https://img.shields.io/badge/Gmail-SMTP-B31412?style=for-the-badge&logo=gmail&logoColor=white&labelColor=EA4335" alt="Gmail"/>
+  <img src="https://img.shields.io/badge/JWT-httpOnly_Cookies-D63AFF?style=for-the-badge&logo=jsonwebtokens&logoColor=white&labelColor=000000" alt="JWT"/>
+  <img src="https://img.shields.io/badge/PWA-Installable-8A4DFF?style=for-the-badge&logo=pwa&logoColor=white&labelColor=5A0FC8" alt="PWA"/>
+  <img src="https://img.shields.io/badge/Web_Push-VAPID-E65C00?style=for-the-badge&labelColor=FF7A1A" alt="Web Push"/>
+  <img src="https://img.shields.io/badge/Render-Web_Service-0E8F6E?style=for-the-badge&logo=render&logoColor=black&labelColor=46E3B7" alt="Render"/>
+  <img src="https://img.shields.io/badge/PythonAnywhere-Mail_Relay-0B6A93?style=for-the-badge&logo=pythonanywhere&logoColor=white&labelColor=1D9FD7" alt="PythonAnywhere"/>
+  <img src="https://img.shields.io/badge/cron--job.org-2_/_day-1E4E82?style=for-the-badge&labelColor=2B6CB0" alt="cron-job.org"/>
 </p>
 
 <p>
@@ -61,7 +89,7 @@ It is not "just a form handler". Around that one idea the project grows into a c
 
 <div align="center">
 
-|  | 55 | 11 | 14 | 33 | 23,000+ |
+|  | 58 | 12 | 14 | 34 | 23,000+ |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | | **API Endpoints** | **Database Collections** | **Code Languages in the Copy-Paste Box** | **React Components** | **Lines of Code** |
 
@@ -124,8 +152,8 @@ You do not need to know these words before you start. Come back to this table wh
 |---|---|
 | **API** | A set of "doors" on a server. Your website knocks on a door (a URL), sends some data, and gets an answer back. |
 | **API key** | A long secret text that proves "this request comes from this account". Like a house key. |
-| **Backend** | The part of the project that runs on a server: it stores data, checks rules and sends emails. |
-| **Frontend** | The part you see and touch in the browser: pages, buttons, forms. |
+| **Backend** | The part of the project that runs on a server: it stores data, checks rules and sends emails. ![helmet](https://img.shields.io/badge/helmet-0D9488?style=flat-square) ![cors](https://img.shields.io/badge/cors-F59E0B?style=flat-square) ![cookie-parser](https://img.shields.io/badge/cookie--parser-7C4A21?style=flat-square) ![dotenv](https://img.shields.io/badge/dotenv-ECD53F?style=flat-square&logo=dotenv&logoColor=black) ![mongoose-aggregate-paginate-v2](https://img.shields.io/badge/mongoose--aggregate--paginate--v2-880000?style=flat-square) ![nodemon (dev)](https://img.shields.io/badge/nodemon_(dev)-76D04B?style=flat-square&logo=nodemon&logoColor=white) |
+| **Frontend** | The part you see and touch in the browser: pages, buttons, forms. ![React DOM 19](https://img.shields.io/badge/React_DOM_19-61DAFB?style=flat-square&logo=react&logoColor=black) ![Eruda 3](https://img.shields.io/badge/Eruda_3-7C3AED?style=flat-square) ![ESLint 10](https://img.shields.io/badge/ESLint_10-4B32C3?style=flat-square&logo=eslint&logoColor=white) ![@vitejs/plugin-react 6](https://img.shields.io/badge/@vitejs/plugin--react_6-646CFF?style=flat-square&logo=vite&logoColor=white) |
 | **Endpoint** | One specific door of the API, for example `POST /api/v1/mail/send`. |
 | **Database** | An organised storage place for data. This project uses **MongoDB**. |
 | **Collection** | In MongoDB, a collection is like a table: `users`, `submissions`, and so on. |
@@ -198,13 +226,14 @@ A deliberately hard-to-trigger, **irreversible** emergency tool. The Super Admin
 - **Animated everything, with respect:** counting numbers, a glowing quota ring that changes colour every 10 %, a smooth email-activity chart drawn by hand in SVG, an animated boot screen, and full support for `prefers-reduced-motion`.
 - **Postman-style API tester** inside the dashboard: it shows the response, the time in milliseconds and the size in bytes — built because the whole project is tested from a phone.
 - **Live system status page** that shows the Kill Switch countdown to every visitor.
+- **Built-in documentation book (`/docs`)** — this very README, turned into a book-style web page with a cover, contents, chapters, dark/light mode and a **PDF download** button. It is generated from `README.md` on the server, so editing the README updates the page by itself. Anyone can read and download it; only admins can see how many times it was downloaded.
 
 ---
 
 ## 🏗️ Architecture
 
 <p align="center">
-  <img src="https://mermaid.ink/svg/eyJjb2RlIjogImdyYXBoIFREXG4gICAgVltcIlZpc2l0b3Igb24gYW55IHdlYnNpdGVcIl0gLS0-fFwiSFRNTCBmb3JtIG9yIGZldGNoXCJ8IEFQSVxuICAgIHN1YmdyYXBoIFJbXCJSZW5kZXIgLSBvbmUgV2ViIFNlcnZpY2VcIl1cbiAgICAgICAgRkVbXCJSZWFjdCArIFZpdGUgYXBwPGJyLz5zZXJ2ZWQgYXMgc3RhdGljIGZpbGVzXCJdXG4gICAgICAgIEFQSVtcIk5vZGUuanMgKyBFeHByZXNzIDUgQVBJPGJyLz4vYXBpL3YxLy4uLlwiXVxuICAgICAgICBRW1wiTWFpbCBxdWV1ZSB3b3JrZXI8YnIvPnJldHJ5IGFuZCBiYWNrb2ZmXCJdXG4gICAgICAgIEZFIC0tLSBBUElcbiAgICAgICAgQVBJIC0tPiBRXG4gICAgZW5kXG4gICAgQVBJIDwtLT58XCJNb25nb29zZVwifCBEQlsoXCJNb25nb0RCIEF0bGFzPGJyLz4xMSBjb2xsZWN0aW9uc1wiKV1cbiAgICBRIC0tPnxcIkhUVFBTIFBPU1QgL3NlbmQ8YnIvPndpdGggc2VjcmV0XCJ8IFJMW1wiTWFpbCBSZWxheTxici8-Rmxhc2sgb24gUHl0aG9uQW55d2hlcmVcIl1cbiAgICBSTCAtLT58XCJTTVRQIDQ2NSBvciA1ODc8YnIvPkFwcCBQYXNzd29yZFwifCBHTVtcIkdtYWlsXCJdXG4gICAgR00gLS0-IElOW1wiT3duZXIgaW5ib3hcIl1cbiAgICBBUEkgLS0-IENMW1wiQ2xvdWRpbmFyeTxici8-YXZhdGFyc1wiXVxuICAgIEFQSSAtLT58XCJXZWIgUHVzaCwgVkFQSURcInwgUEhbXCJQaG9uZSBub3RpZmljYXRpb24gYmFyXCJdXG4gICAgQ1JPTltcImNyb24tam9iLm9yZzxici8-MiB0aW1lcyBhIGRheVwiXSAtLT58XCJHRVQgL3N5c3RlbS9jcm9uXCJ8IEFQSVxuICAgIHN0eWxlIFYgZmlsbDojMWQ4YmZmLGNvbG9yOiNmZmZcbiAgICBzdHlsZSBBUEkgZmlsbDojMGI1N2M0LGNvbG9yOiNmZmZcbiAgICBzdHlsZSBEQiBmaWxsOiMxM2FhNTIsY29sb3I6I2ZmZlxuICAgIHN0eWxlIFJMIGZpbGw6I2ZmN2ExYSxjb2xvcjojZmZmXG4gICAgc3R5bGUgR00gZmlsbDojZWE0MzM1LGNvbG9yOiNmZmZcbiAgICBzdHlsZSBJTiBmaWxsOiMzNGE4NTMsY29sb3I6I2ZmZiIsICJtZXJtYWlkIjogeyJ0aGVtZSI6ICJkZWZhdWx0In19?bgColor=white" alt="Email Sender architecture diagram" width="100%"/>
+  <img src="https://mermaid.ink/svg/eyJjb2RlIjogImdyYXBoIFREXG4gICAgVltcIlZpc2l0b3Igb24gYW55IHdlYnNpdGVcIl0gLS0-fFwiSFRNTCBmb3JtIG9yIGZldGNoXCJ8IEFQSVxuICAgIHN1YmdyYXBoIFJbXCJSZW5kZXIgLSBvbmUgV2ViIFNlcnZpY2VcIl1cbiAgICAgICAgRkVbXCJSZWFjdCArIFZpdGUgYXBwPGJyLz5zZXJ2ZWQgYXMgc3RhdGljIGZpbGVzXCJdXG4gICAgICAgIEFQSVtcIk5vZGUuanMgKyBFeHByZXNzIDUgQVBJPGJyLz4vYXBpL3YxLy4uLlwiXVxuICAgICAgICBRW1wiTWFpbCBxdWV1ZSB3b3JrZXI8YnIvPnJldHJ5IGFuZCBiYWNrb2ZmXCJdXG4gICAgICAgIEZFIC0tLSBBUElcbiAgICAgICAgQVBJIC0tPiBRXG4gICAgZW5kXG4gICAgQVBJIDwtLT58XCJNb25nb29zZVwifCBEQlsoXCJNb25nb0RCIEF0bGFzPGJyLz4xMiBjb2xsZWN0aW9uc1wiKV1cbiAgICBRIC0tPnxcIkhUVFBTIFBPU1QgL3NlbmQ8YnIvPndpdGggc2VjcmV0XCJ8IFJMW1wiTWFpbCBSZWxheTxici8-Rmxhc2sgb24gUHl0aG9uQW55d2hlcmVcIl1cbiAgICBSTCAtLT58XCJTTVRQIDQ2NSBvciA1ODc8YnIvPkFwcCBQYXNzd29yZFwifCBHTVtcIkdtYWlsXCJdXG4gICAgR00gLS0-IElOW1wiT3duZXIgaW5ib3hcIl1cbiAgICBBUEkgLS0-IENMW1wiQ2xvdWRpbmFyeTxici8-YXZhdGFyc1wiXVxuICAgIEFQSSAtLT58XCJXZWIgUHVzaCwgVkFQSURcInwgUEhbXCJQaG9uZSBub3RpZmljYXRpb24gYmFyXCJdXG4gICAgQ1JPTltcImNyb24tam9iLm9yZzxici8-MiB0aW1lcyBhIGRheVwiXSAtLT58XCJHRVQgL3N5c3RlbS9jcm9uXCJ8IEFQSVxuICAgIHN0eWxlIFYgZmlsbDojMWQ4YmZmLGNvbG9yOiNmZmZcbiAgICBzdHlsZSBBUEkgZmlsbDojMGI1N2M0LGNvbG9yOiNmZmZcbiAgICBzdHlsZSBEQiBmaWxsOiMxM2FhNTIsY29sb3I6I2ZmZlxuICAgIHN0eWxlIFJMIGZpbGw6I2ZmN2ExYSxjb2xvcjojZmZmXG4gICAgc3R5bGUgR00gZmlsbDojZWE0MzM1LGNvbG9yOiNmZmZcbiAgICBzdHlsZSBJTiBmaWxsOiMzNGE4NTMsY29sb3I6I2ZmZiIsICJtZXJtYWlkIjogeyJ0aGVtZSI6ICJkZWZhdWx0In19?bgColor=white" alt="Email Sender architecture diagram" width="100%"/>
 </p>
 
 <details>
@@ -220,7 +249,7 @@ graph TD
         FE --- API
         API --> Q
     end
-    API <-->|"Mongoose"| DB[("MongoDB Atlas<br/>11 collections")]
+    API <-->|"Mongoose"| DB[("MongoDB Atlas<br/>12 collections")]
     Q -->|"HTTPS POST /send<br/>with secret"| RL["Mail Relay<br/>Flask on PythonAnywhere"]
     RL -->|"SMTP 465 or 587<br/>App Password"| GM["Gmail"]
     GM --> IN["Owner inbox"]
@@ -1093,7 +1122,7 @@ Base URL (production): `https://YOUR-APP.onrender.com/api/v1`. Every response ha
 ```
 
 Errors look like `{ "statusCode": 4xx, "success": false, "message": "…", "errors": [] }`.
-Protected routes need the login cookie (or an `Authorization: Bearer <token>` header). **55 endpoints** in total.
+Protected routes need the login cookie (or an `Authorization: Bearer <token>` header). **58 endpoints** in total.
 
 ### 📨 Mail (public, API-key protected)
 
@@ -1191,6 +1220,15 @@ Protected routes need the login cookie (or an `Authorization: Bearer <token>` he
 | `GET` | `/cron?key=…` | Forced retry sweep (returns `202` immediately, work continues in the background) |
 | `GET` | `/mail-queue?key=…` | Queue health and last errors |
 
+### 📚 Docs (`/docs`)
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/docs` | **Public page (not JSON).** The README as a book. Re-built automatically when `README.md` changes. |
+| `GET` | `/api/v1/docs/meta` | **Public.** Version hash of the book — an open page uses it to show "a newer version is available". |
+| `POST` | `/api/v1/docs/download` | **Public.** Counts one PDF download (same IP is counted once per 3 minutes). |
+| `GET` | `/api/v1/docs/stats` | **Admin and Super Admin only.** Total, today, last 7 / 30 days and a 30-day graph of downloads. |
+
 ### 🚉 Mail Relay (Flask, separate service)
 
 | Method | Endpoint | Purpose |
@@ -1266,7 +1304,7 @@ When nothing is happening: `{ "active": false }`.
 
 ## 🗃️ Data Model
 
-Eleven MongoDB collections (defined with Mongoose):
+Twelve MongoDB collections (defined with Mongoose):
 
 | Collection | What it stores | Notable detail |
 |---|---|---|
@@ -1281,6 +1319,7 @@ Eleven MongoDB collections (defined with Mongoose):
 | **Approval** | A permission request: action, target, requester, status, expiry | `pending → approved → used` (or `denied`) |
 | **KillSession** | Progress of the 4-step Kill Switch ritual | Expires after 15 minutes |
 | **SystemState** | The *armed* Kill Switch (targets, end time, dry-run flag) | Lets the countdown **survive a restart** |
+| **DocStat** | How many times the `/docs` PDF was downloaded (total + per day) | One document only; visible to admins only |
 
 ---
 
