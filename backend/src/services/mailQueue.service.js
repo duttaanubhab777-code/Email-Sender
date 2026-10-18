@@ -187,8 +187,8 @@ export const queueOtpEmail = ({ to, code, purpose, minutes }) => {
 };
 
 // আগের sendNotificationEmail এর বদলি (একই signature) — এখন request আটকায় না, DB তে সেভ হয়ে ব্যাকগ্রাউন্ডে যায়
-export const sendNotificationEmail = ({ to, subject, heading, lines }) => {
-    const mail = buildNotificationMail({ subject, heading, lines });
+export const sendNotificationEmail = ({ to, subject, heading, lines, danger = false }) => {
+    const mail = buildNotificationMail({ subject, heading, lines, danger });
     return queueMail({
         kind: "notify",
         to,

@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { ApiError } from "../utils/ApiError.js";
 import { OTP_PURPOSES } from "../constants.js";
+import { buildOtpHtml, buildNoticeHtml } from "./emailTheme.js";
 
 let transporter;
 const getTransporter = () =>
@@ -27,14 +28,6 @@ export const escapeHtml = v =>
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
-
-const shell = (heading, inner) => `<!DOCTYPE html><html><body style="margin:0;padding:24px 0;background:#09090b;font-family:Helvetica,Arial,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-<table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:100%;background:#18181b;border:1px solid #27272a;border-radius:14px;overflow:hidden;">
-<tr><td style="background:linear-gradient(135deg,#ff007f,#7928ca,#4338ca);padding:22px;text-align:center;color:#fff;font-size:20px;font-weight:700;">${escapeHtml(heading)}</td></tr>
-<tr><td style="padding:28px;color:#e4e4e7;font-size:14px;line-height:1.6;">${inner}</td></tr>
-<tr><td style="padding:14px;text-align:center;background:#09090b;color:#71717a;font-size:12px;">Email Sender</td></tr>
-</table></td></tr></table></body></html>`;
 
 // Render free plan এ SMTP পোর্ট (25/465/587) বন্ধ। তাই HTTPS (পোর্ট 443) এ পাঠানো হয়।
 // MAIL_PROVIDER দিয়ে বেছে নেওয়া যায়: relay | brevo | smtp | auto (default)
@@ -173,25 +166,21 @@ const OTP_TITLES = {
 
 export const buildOtpMail = ({ code, purpose, minutes }) => ({
     subject: `${code} is your Email Sender code`,
-    html: shell(
-        OTP_TITLES[purpose] || "Verification code",
-        `<p style="margin:0 0 16px;">Use this code to continue:</p>
-<div style="font-size:34px;font-weight:700;letter-spacing:10px;text-align:center;background:#27272a;border-radius:10px;padding:16px;color:#fff;">${escapeHtml(code)}</div>
-<p style="margin:16px 0 0;color:#a1a1aa;">It expires in ${minutes} minutes. Never share this code with anyone. If you didn't request it, ignore this email.</p>`
-    )
+    html: buildOtpHtml({
+        code,
+        minutes,
+        title: OTP_TITLES[purpose] || "Verification code"
+    })
 });
 
-export const buildNotificationMail = ({ subject, heading, lines }) => ({
+export const buildNotificationMail = ({ subject, heading, lines, danger = false }) => ({
     subject,
-    html: shell(
-        heading,
-        lines.map(l => `<p style="margin:0 0 10px;">${escapeHtml(l)}</p>`).join("")
-    )
+    html: buildNoticeHtml({ heading, lines, danger })
 });
 
 // সরাসরি (কিউ ছাড়া) পাঠানো — এখন সাধারণত ব্যবহার হয় না; OTP/notification যায় mailQueue.service.js দিয়ে
 export const sendOtpEmail = ({ to, code, purpose, minutes }) =>
     sendMail({ to, ...buildOtpMail({ code, purpose, minutes }) });
 
-export const sendNotificationEmail = ({ to, subject, heading, lines }) =>
-    sendMail({ to, ...buildNotificationMail({ subject, heading, lines }) });
+export const sendNotificationEmail = ({ to, subject, heading, lines, danger }) =>
+    sendMail({ to, ...buildNotificationMail({ subject, heading, lines, danger }) });

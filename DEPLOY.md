@@ -67,7 +67,7 @@ New → **Blueprint** (বা Web Service) → repo বেছে নাও।
 | `MAIL_PROVIDER` | `relay` |
 | `MAIL_RELAY_URL` | `https://USERNAME.pythonanywhere.com/send` |
 | `MAIL_RELAY_SECRET` | `config.py` এর `RELAY_SECRET` এর হুবহু একই |
-| `TRUST_PROXY` | `1` |
+| `TRUST_PROXY` | `1` (ঐচ্ছিক) — ভিজিটরের আসল IP এখন `CF-Connecting-IP` থেকে নেওয়া হয় (Render এ নিজে নিজেই), তাই এটা না দিলেও IP ঠিক আসে |
 | `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`, `OTP_SECRET`, `CRON_SECRET` | Blueprint দিলে Render নিজে বানায়; নাহলে লম্বা random লেখা |
 | `SUPER_ADMIN_EMAIL` | এই ইমেইলে register করলে Super Admin হবে |
 | `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET` | avatar এর জন্য |

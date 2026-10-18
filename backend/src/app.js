@@ -6,6 +6,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ApiError } from "./utils/ApiError.js";
 import { killGate } from "./middlewares/killGate.middleware.js";
+import { getClientIp } from "./utils/clientIp.js";
 
 const app = express();
 
@@ -22,6 +23,18 @@ if (process.env.TRUST_PROXY) {
         /^\d+$/.test(v) ? Number(v) : v === "true" ? true : v
     );
 }
+
+// সবার আগে ভিজিটরের আসল IP বসিয়ে দেওয়া — এরপর req.ip সব জায়গায় (login history, register,
+// rate limit, ফর্মের মেসেজ) ঠিক IP দেয়। না হলে Render এ সবার IP একই (10.x) দেখাত।
+app.use((req, res, next) => {
+    Object.defineProperty(req, "ip", {
+        value: getClientIp(req),
+        configurable: true,
+        enumerable: true,
+        writable: true
+    });
+    next();
+});
 
 const appCors = cors({ origin: process.env.CORS_ORIGIN, credentials: true });
 const mailCors = cors({ origin: "*" }); // শুধু API key-ওয়ালা mail route

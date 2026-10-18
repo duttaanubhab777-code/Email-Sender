@@ -137,6 +137,7 @@ export const armKillSwitch = async ({ targets, user }) => {
                     to: s.email,
                     subject: "Kill switch ARMED",
                     heading: "Kill switch armed",
+                    danger: true,
                     lines: [
                         `Started by: ${user.email}`,
                         `Targets: ${targets.join(", ")}`,
