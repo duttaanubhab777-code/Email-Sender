@@ -1,6 +1,7 @@
 import ThemeToggle from "../../components/ThemeToggle";
 import { LogoFull } from "../../components/Logo";
 import Icon from "../../components/Icons";
+import { DocsPill, DocsFootLink } from "../../components/DocsLink";
 
 // বাঁ দিকে প্রোডাক্টের আসল কাজ (একটা request -> email), ডান দিকে ফর্ম
 export default function AuthLayout({ children }) {
@@ -73,6 +74,7 @@ export default function AuthLayout({ children }) {
 
             <main className="auth-main">
                 <div className="auth-top">
+                    <DocsPill />
                     <ThemeToggle />
                 </div>
                 <div className="auth-card">
@@ -80,6 +82,7 @@ export default function AuthLayout({ children }) {
                         <LogoFull width={220} className="auth-logo-big" />
                     </div>
                     {children}
+                    <DocsFootLink />
                 </div>
             </main>
         </div>

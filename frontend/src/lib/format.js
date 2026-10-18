@@ -78,23 +78,42 @@ export const mmss = totalSeconds => {
     return [Math.floor(s / 60), s % 60].map(v => String(v).padStart(2, "0"));
 };
 
-export async function copyToClipboard(text) {
+// Copies the WHOLE text. navigator.clipboard only exists on https / localhost,
+// so on a phone opening http://192.168.x.x it is missing. The fallback below
+// puts the text in a real textarea, selects every character (explicit
+// selection range) and copies it, so a long snippet is copied in full.
+function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.setAttribute("aria-hidden", "true");
+    ta.style.cssText =
+        "position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;" +
+        "outline:0;opacity:0;font-size:16px;white-space:pre;overflow:hidden";
+    document.body.appendChild(ta);
+    let ok = false;
     try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.cssText = "position:fixed;opacity:0";
-        document.body.appendChild(ta);
+        ta.focus({ preventScroll: true });
         ta.select();
-        let ok = false;
-        try {
-            ok = document.execCommand("copy");
-        } catch {
-            ok = false;
-        }
-        ta.remove();
-        return ok;
+        ta.setSelectionRange(0, text.length);
+        ok = document.execCommand("copy");
+    } catch {
+        ok = false;
     }
+    ta.remove();
+    return ok;
+}
+
+export async function copyToClipboard(text) {
+    const value = String(text ?? "");
+    if (!value) return false;
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(value);
+            return true;
+        } catch {
+            /* permission / focus problem: use the fallback */
+        }
+    }
+    return legacyCopy(value);
 }

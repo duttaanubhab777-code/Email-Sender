@@ -31,6 +31,8 @@ export default function Register() {
     const [uStatus, setUStatus] = useState("idle"); // idle | checking | ok | taken | invalid
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
+    const [touched, setTouched] = useState({}); // blur এর পর ভুল হলে লাল দেখায়
+    const touch = k => setTouched(t => ({ ...t, [k]: true }));
 
     // email লিখলে @ এর আগের অংশ username এ বসে (instant), তারপর server থেকে ফাঁকা নাম এনে ঠিক করে
     useEffect(() => {
@@ -205,9 +207,10 @@ export default function Register() {
                     </label>
                     <input
                         id="fullName"
-                        className="input"
+                        className={`input ${fullName.trim() ? "is-ok" : touched.name ? "is-error" : ""}`}
                         value={fullName}
                         onChange={e => setFullName(e.target.value)}
+                        onBlur={() => touch("name")}
                         autoComplete="name"
                         placeholder="Anubhab Dutta"
                         required
@@ -220,13 +223,22 @@ export default function Register() {
                     <input
                         id="email"
                         type="email"
-                        className="input"
+                        className={`input ${EMAIL_RE.test(email) ? "is-ok" : email && touched.email ? "is-error" : ""}`}
                         value={email}
                         onChange={e => setEmail(e.target.value)}
+                        onBlur={() => touch("email")}
                         autoComplete="email"
                         placeholder="you@example.com"
                         required
                     />
+                    {email && EMAIL_RE.test(email) && (
+                        <span className="help ok">Email looks good</span>
+                    )}
+                    {email && touched.email && !EMAIL_RE.test(email) && (
+                        <span className="help err">
+                            Enter a valid email address
+                        </span>
+                    )}
                 </div>
                 <div className="field">
                     <label className="label" htmlFor="username">
@@ -268,6 +280,8 @@ export default function Register() {
                         label="Password"
                         value={password}
                         onChange={setPassword}
+                        ok={password.length >= 8}
+                        bad={Boolean(password) && password.length < 8}
                         autoComplete="new-password"
                         placeholder="At least 8 characters"
                     />
@@ -282,7 +296,9 @@ export default function Register() {
                                 <i />
                                 <i />
                             </div>
-                            <span className="help">
+                            <span
+                                className={`help ${password.length < 8 ? "err" : "ok"}`}
+                            >
                                 Strength: <b>{STRENGTH[score]}</b>
                                 {password.length < 8 &&
                                     " · use at least 8 characters"}

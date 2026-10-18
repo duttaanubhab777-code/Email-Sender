@@ -1,0 +1,331 @@
+/* =====================================================================
+   Email Sender — polish layer  (import LAST in main.jsx)
+
+   1) RIGHT = MongoDB green (#00ed64)   ·   WRONG = red
+      inputs, usernames, help text, toasts ("Signed in as …"), callouts,
+      OTP boxes, password strength, system dots
+   2) "Send & embed" code box: expand / collapse + download button
+   3) Public Documentation links (login page, topbar, sidebar, menu)
+   ===================================================================== */
+
+/* ---------- 1) tokens ---------- */
+:root {
+    --mg: #00ed64; /* MongoDB spring green */
+    --mg-deep: #00684a; /* MongoDB evergreen (readable text on white) */
+    --mg-ink: #023430; /* MongoDB forest (text on top of the bright green) */
+
+    --ok: #00ed64;
+    --ok-soft: #e3fcef;
+    --ok-line: #6bf2a5;
+    --ok-ink: #00684a;
+    --ok-ring: rgba(0, 237, 100, 0.28);
+
+    --bad-ring: rgba(239, 28, 42, 0.22);
+}
+:root[data-theme="dark"] {
+    --ok: #00ed64;
+    --ok-soft: rgba(0, 237, 100, 0.12);
+    --ok-line: rgba(0, 237, 100, 0.5);
+    --ok-ink: #00ed64;
+    --ok-ring: rgba(0, 237, 100, 0.3);
+
+    --bad-ring: rgba(255, 71, 87, 0.3);
+}
+
+/* ---------- inputs: explicit states (set from React) ---------- */
+.input.is-ok,
+.textarea.is-ok,
+.select.is-ok {
+    border-color: var(--ok);
+}
+.input.is-ok:focus,
+.textarea.is-ok:focus,
+.select.is-ok:focus {
+    border-color: var(--ok);
+    box-shadow: 0 0 0 3px var(--ok-ring);
+}
+.input.is-error,
+.textarea.is-error,
+.select.is-error {
+    border-color: var(--bad);
+}
+.input.is-error:focus,
+.textarea.is-error:focus,
+.select.is-error:focus {
+    border-color: var(--bad);
+    box-shadow: 0 0 0 3px var(--bad-ring);
+}
+
+/* ---------- inputs: automatic states (browser validation) ----------
+   Only for required fields that the visitor already touched, so an empty
+   untouched form stays calm. Password "sign in" fields are skipped
+   (a typed password is not "right" or "wrong" by itself). */
+.input[required]:user-valid:not(.is-error):not([autocomplete="current-password"]) {
+    border-color: var(--ok);
+}
+.input[required]:user-valid:not(.is-error):not([autocomplete="current-password"]):focus {
+    box-shadow: 0 0 0 3px var(--ok-ring);
+}
+.input:user-invalid:not(.is-ok) {
+    border-color: var(--bad);
+}
+.input:user-invalid:not(.is-ok):focus {
+    box-shadow: 0 0 0 3px var(--bad-ring);
+}
+
+/* a small tick / cross inside plain inputs (inputs that already have an
+   icon on the right — password eye, username status — are left alone) */
+.field > .input.is-ok,
+.field > .input[required]:user-valid:not(.is-error):not([autocomplete="current-password"]) {
+    padding-right: 38px;
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 17px 17px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ed64' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+.field > .input.is-error,
+.field > .input:user-invalid:not(.is-ok) {
+    padding-right: 38px;
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 17px 17px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef1c2a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
+}
+
+/* icon on the right of the username box (✓ available / ✕ taken) */
+.input-wrap:has(.input.is-ok) .adorn.static {
+    color: var(--ok);
+    animation: pg-pop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1);
+}
+.input-wrap:has(.input.is-error) .adorn.static {
+    color: var(--bad);
+    animation: pg-pop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1);
+}
+@keyframes pg-pop {
+    from {
+        transform: scale(0.4);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+/* ---------- help text under fields ---------- */
+.help.ok {
+    color: var(--ok-ink);
+    font-weight: 600;
+}
+.help.err {
+    color: var(--bad-ink);
+    font-weight: 600;
+}
+:root[data-theme="dark"] .help.ok {
+    color: var(--ok-ink);
+}
+.help.ok::before {
+    content: "✓ ";
+    font-weight: 800;
+}
+.help.err::before {
+    content: "✕ ";
+    font-weight: 800;
+}
+
+/* ---------- toasts: success = green, error = red ---------- */
+.toast.toast-success {
+    --t-bg: #e9fff3;
+    --t-line: #8df3bb;
+    --t-ink: #06361f;
+    --t-ic: #00ed64;
+    --t-ic-ink: #023430;
+    box-shadow:
+        inset 4px 0 0 var(--t-ic),
+        0 10px 28px rgba(0, 150, 70, 0.22);
+}
+:root[data-theme="dark"] .toast.toast-success {
+    --t-bg: #06291b;
+    --t-line: #0c5a39;
+    --t-ink: #c9ffe3;
+    --t-ic: #00ed64;
+    --t-ic-ink: #023430;
+    box-shadow:
+        inset 4px 0 0 var(--t-ic),
+        0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.toast.toast-error {
+    --t-bg: #ffebec;
+    --t-line: #ffb3b8;
+    --t-ink: #5a0910;
+    --t-ic: #ef1c2a;
+    --t-ic-ink: #fff;
+    box-shadow:
+        inset 4px 0 0 var(--t-ic),
+        0 10px 28px rgba(200, 20, 35, 0.22);
+}
+:root[data-theme="dark"] .toast.toast-error {
+    --t-bg: #3a1217;
+    --t-line: #7a2530;
+    --t-ink: #ffd6d9;
+    --t-ic: #ff4757;
+    --t-ic-ink: #2a0709;
+}
+
+/* ---------- callouts ---------- */
+.callout.ok {
+    border-color: var(--ok-line);
+    background: var(--ok-soft);
+}
+.callout.ok .icon,
+.callout.ok > svg:first-child {
+    color: var(--ok-ink);
+}
+.callout.danger {
+    border-color: var(--bad-line);
+    background: var(--bad-soft);
+}
+.callout.danger .icon,
+.callout.danger > svg:first-child {
+    color: var(--bad-ink);
+}
+
+/* ---------- OTP boxes ---------- */
+.otp input.filled {
+    border-color: var(--ok);
+}
+.otp input.filled:focus {
+    box-shadow: 0 0 0 3px var(--ok-ring);
+}
+.otp.bad input,
+.otp.bad input.filled {
+    border-color: var(--bad);
+}
+
+/* ---------- password strength: weak red → strong green ---------- */
+.strength.s1 i:nth-child(-n + 1) {
+    background: var(--bad);
+}
+.strength.s2 i:nth-child(-n + 2) {
+    background: #ff9f1a;
+}
+.strength.s3 i:nth-child(-n + 3) {
+    background: #8be04e;
+}
+.strength.s4 i {
+    background: var(--ok);
+}
+
+/* ---------- small status bits ---------- */
+.side-status .dot {
+    background: var(--ok);
+    box-shadow: 0 0 0 3px var(--ok-soft);
+}
+.req-card .resp .ok {
+    background: var(--mg);
+    color: var(--mg-ink);
+}
+
+/* =====================================================================
+   2) Send & embed — code box
+   ===================================================================== */
+.code-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.code-meta {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+}
+.code-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.code .code-pre,
+.code pre {
+    max-height: 420px;
+}
+/* expanded: the whole code is visible, the page itself scrolls */
+.code.expanded .code-pre,
+.code.expanded pre {
+    max-height: none;
+}
+.code-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--link);
+    background: var(--panel-2, rgba(128, 128, 128, 0.08));
+    border-top: 1px solid var(--line);
+    cursor: pointer;
+}
+.code-more:hover {
+    background: var(--hover);
+}
+.code-more svg {
+    transition: transform 0.25s;
+}
+.code-more.open svg {
+    transform: rotate(180deg);
+}
+
+/* =====================================================================
+   3) Documentation links (public — no login needed)
+   ===================================================================== */
+.docs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background:
+        linear-gradient(var(--panel), var(--panel)) padding-box,
+        var(--bo) border-box;
+    transition:
+        transform 0.15s,
+        box-shadow 0.2s;
+}
+.docs-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(29, 109, 255, 0.22);
+}
+.docs-icon-link {
+    display: inline-grid;
+    place-items: center;
+    color: var(--ink-2, var(--ink));
+}
+.side-link svg:last-child:not(:first-child) {
+    margin-left: auto;
+    opacity: 0.55;
+}
+.docs-foot {
+    margin-top: 10px;
+}
+.docs-foot .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+@media (max-width: 640px) {
+    .docs-pill span {
+        display: none;
+    }
+    .docs-pill {
+        padding: 0;
+        width: 38px;
+        justify-content: center;
+    }
+}

@@ -11,6 +11,11 @@ import { NotificationProvider, useNotifications } from "../context/NotificationC
 import { PushPrompt } from "./PushControls";
 import { InstallMenuItem, InstallPrompt, OfflineBar } from "./InstallApp";
 import { Brand } from "./Logo";
+import {
+    DocsIconLink,
+    DocsMenuItem,
+    DocsSideLink
+} from "./DocsLink";
 import { RoleBadge } from "./ui/Bits";
 
 const MAIN = [
@@ -168,6 +173,7 @@ function ConsoleShell() {
                     )}
                 </nav>
                 <div className="side-foot">
+                    <DocsSideLink />
                     <NavLink to="/system/status" className="side-status">
                         <span className="dot" /> System status
                     </NavLink>
@@ -198,6 +204,7 @@ function ConsoleShell() {
                         <b>{title}</b>
                     </div>
                     <div className="top-actions">
+                        <DocsIconLink />
                         <NotificationBell />
                         <ThemeToggle />
                         <div className="menu-wrap" ref={menuRef}>
@@ -250,6 +257,7 @@ function ConsoleShell() {
                                         <Icon name="activity" size={16} />{" "}
                                         System status
                                     </NavLink>
+                                    <DocsMenuItem />
                                     <InstallMenuItem onDone={() => setMenuOpen(false)} />
                                     <button
                                         className="menu-item danger"

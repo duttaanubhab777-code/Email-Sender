@@ -9,6 +9,8 @@ export default function PasswordField({
     autoComplete = "current-password",
     placeholder = "••••••••",
     error,
+    bad = false,
+    ok = false,
     hint,
     right,
     autoFocus,
@@ -24,7 +26,7 @@ export default function PasswordField({
             <div className="input-wrap">
                 <input
                     id={id}
-                    className={`input ${error ? "is-error" : ""}`}
+                    className={`input ${error || bad ? "is-error" : ok ? "is-ok" : ""}`}
                     type={show ? "text" : "password"}
                     value={value}
                     onChange={e => onChange(e.target.value)}

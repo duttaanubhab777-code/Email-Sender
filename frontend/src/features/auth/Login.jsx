@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../components/Toast";
 import PasswordField from "../../components/ui/PasswordField";
 import { Callout } from "../../components/ui/Bits";
+import { EMAIL_RE, USERNAME_RE } from "../../lib/format";
 import AuthLayout from "./AuthLayout";
 
 export default function Login() {
@@ -17,6 +18,11 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
+
+    // red only after the server said no; green while the text looks like a valid email / username
+    const idLooksOk =
+        EMAIL_RE.test(identifier.trim()) ||
+        USERNAME_RE.test(identifier.trim().toLowerCase());
 
     async function submit(e) {
         e.preventDefault();
@@ -51,9 +57,12 @@ export default function Login() {
                     </label>
                     <input
                         id="identifier"
-                        className="input"
+                        className={`input ${error ? "is-error" : idLooksOk ? "is-ok" : ""}`}
                         value={identifier}
-                        onChange={e => setIdentifier(e.target.value)}
+                        onChange={e => {
+                            setIdentifier(e.target.value);
+                            setError("");
+                        }}
                         autoComplete="username"
                         placeholder="you@example.com"
                         autoFocus
@@ -63,7 +72,11 @@ export default function Login() {
                 <PasswordField
                     id="password"
                     value={password}
-                    onChange={setPassword}
+                    onChange={v => {
+                        setPassword(v);
+                        setError("");
+                    }}
+                    bad={Boolean(error)}
                     right={
                         <Link
                             to="/users/forgot-password"

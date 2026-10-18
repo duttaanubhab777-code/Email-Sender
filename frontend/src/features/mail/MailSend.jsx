@@ -35,6 +35,9 @@ export default function MailSend() {
     const [keyId, setKeyId] = useState(params.get("key") || "");
     const [tab, setTab] = useState("styled");
     const [formTheme, setFormTheme] = useState("auto");
+    // "page" = complete HTML5 file (doctype, head, body) · "snippet" = only the form
+    const [mode, setMode] = useState("page");
+    const [expanded, setExpanded] = useState(false);
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -50,16 +53,34 @@ export default function MailSend() {
     }, [keys, keyId]);
 
     const active = keys.find(k => k._id === keyId);
+    const hasModes = tab === "styled" || tab === "plain";
     const realSnippet = buildSnippet(
         tab,
         active?.key || "YOUR_API_KEY",
-        formTheme
+        formTheme,
+        mode
     );
     const shownSnippet = buildSnippet(
         tab,
         active ? maskKey(active.key) : "YOUR_API_KEY",
-        formTheme
+        formTheme,
+        mode
     );
+    const lineCount = shownSnippet.split("\n").length;
+
+    // Saves the complete file (with the real key) so nothing has to be copied by hand
+    function downloadFile() {
+        const blob = new Blob([realSnippet], { type: "text/html;charset=utf-8" });
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = href;
+        a.download = "contact.html";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(href), 1500);
+        toast.success("contact.html downloaded");
+    }
     const previewDark =
         formTheme === "dark" || (formTheme === "auto" && theme === "dark");
 
@@ -188,16 +209,59 @@ export default function MailSend() {
                                 </div>
                             </div>
                         )}
-                        <div className="code">
+                        {hasModes && (
+                            <div className="row-wrap between">
+                                <span className="muted">Code type</span>
+                                <div
+                                    className="seg"
+                                    role="group"
+                                    aria-label="Code type"
+                                >
+                                    <button
+                                        className={
+                                            mode === "page" ? "active" : ""
+                                        }
+                                        onClick={() => setMode("page")}
+                                    >
+                                        Full HTML page
+                                    </button>
+                                    <button
+                                        className={
+                                            mode === "snippet" ? "active" : ""
+                                        }
+                                        onClick={() => setMode("snippet")}
+                                    >
+                                        Form only
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        <div className={`code ${expanded ? "expanded" : ""}`}>
                             <div className="code-bar">
                                 <span>
                                     {TABS.find(t => t.id === tab).label}
+                                    <small className="code-meta">
+                                        {lineCount} lines ·{" "}
+                                        {fmtBytes(realSnippet.length)}
+                                    </small>
                                 </span>
-                                <CopyButton
-                                    text={realSnippet}
-                                    label="Copy code"
-                                    successMsg="Code copied with your real key"
-                                />
+                                <span className="code-actions">
+                                    {hasModes && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={downloadFile}
+                                        >
+                                            <Icon name="download" size={14} />{" "}
+                                            .html
+                                        </button>
+                                    )}
+                                    <CopyButton
+                                        text={realSnippet}
+                                        label="Copy code"
+                                        successMsg={`Full code copied (${lineCount} lines) with your real key`}
+                                    />
+                                </span>
                             </div>
                             <pre className="code-pre" data-lang={lang}>
                                 <code
@@ -206,10 +270,24 @@ export default function MailSend() {
                                     }}
                                 />
                             </pre>
+                            {lineCount > 28 && (
+                                <button
+                                    type="button"
+                                    className={`code-more ${expanded ? "open" : ""}`}
+                                    onClick={() => setExpanded(v => !v)}
+                                >
+                                    <Icon name="chevronDown" size={15} />{" "}
+                                    {expanded
+                                        ? "Show less"
+                                        : `Show all ${lineCount} lines`}
+                                </button>
+                            )}
                         </div>
                         <p className="help">
-                            The key is masked on screen. Copying gives you the
-                            full key.
+                            The key is masked on screen. Copying (or the .html
+                            download) gives you the complete code with the full
+                            key. Save it as <b>contact.html</b> and open it in a
+                            browser.
                         </p>
                         <div className="callout">
                             <Icon name="info" size={18} />

@@ -134,7 +134,7 @@ export const ES_JS = `(function () {
       fetch(form.action.replace(/send$/, "ping"), {
         mode: "no-cors",
         cache: "no-store",
-      });
+      }).catch(function () {});
     } catch (e) {}
   }
   form.addEventListener("focusin", warm);
@@ -558,23 +558,88 @@ const indent = (text, n) =>
         .map(l => (l ? " ".repeat(n) + l : l))
         .join("\n");
 
-export function buildSnippet(tab, key, theme) {
+// ---------------------------------------------------------------------
+// Full HTML5 page (boilerplate). The pasted file works on its own: save it
+// as contact.html, open it, done. The page background follows the form
+// colours (Auto = light/dark by the visitor's device).
+// ---------------------------------------------------------------------
+const pageBg = theme => {
+    if (theme === "dark") return `background: #07121f;`;
+    if (theme === "light") return `background: #eef4ff;`;
+    return `background: #eef4ff;`;
+};
+
+const pageBase = theme => {
+    const auto =
+        theme === "auto"
+            ? `\n\n@media (prefers-color-scheme: dark) {\n  body {\n    background: #07121f;\n  }\n}`
+            : "";
+    return `* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  ${pageBg(theme)}
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.es-form {
+  width: 100%;
+}${auto}`;
+};
+
+const wrapPage = ({ title, head, body }) => `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>${title}</title>
+${head}
+  </head>
+  <body>
+${body}
+  </body>
+</html>
+`;
+
+export function buildSnippet(tab, key, theme, mode = "page") {
     const url = endpoint();
+    const full = mode === "page";
     if (tab === "styled") {
+        const form = buildForm({
+            key,
+            action: url,
+            theme,
+            logo: LOGO_URL,
+            home: window.location.origin
+        });
+        if (full) {
+            return wrapPage({
+                title: "Contact us",
+                head: `    <style>\n${indent(pageBase(theme), 6)}\n\n${indent(getPrettyCss(), 6)}\n    </style>`,
+                body: `${indent(form, 4)}\n\n    <script>\n${indent(ES_JS, 6)}\n    </script>`
+            });
+        }
         return `<!-- Email Sender contact form -->
 <style>
 ${indent(getPrettyCss(), 2)}
 </style>
 
-${buildForm({ key, action: url, theme, logo: LOGO_URL, home: window.location.origin })}
+${form}
 
 <script>
 ${indent(ES_JS, 2)}
 </script>`;
     }
     if (tab === "plain") {
-        return `<!-- Email Sender contact form (unstyled: add your own CSS) -->
-${tag("", "form", [`action="${url}"`, `method="POST"`])}
+        const plain = `${tag("", "form", [`action="${url}"`, `method="POST"`])}
 ${tag("  ", "input", [`type="hidden"`, `name="access_key"`, `value="${key}"`], true)}
 ${tag("  ", "input", [`type="hidden"`, `name="redirect"`, `value="https://your-site.com/thank-you"`], true)}
   <input type="hidden" name="pageUrl" id="es-page-url" />
@@ -593,11 +658,21 @@ ${tag("  ", "input", [`type="hidden"`, `name="redirect"`, `value="https://your-s
   <label>Message <textarea name="message" rows="5" required></textarea></label>
 
   <button type="submit">Send message</button>
-</form>
+</form>`;
+        const pageScript = `document.getElementById("es-page-url").value = window.location.href;`;
+        if (full) {
+            return wrapPage({
+                title: "Contact us",
+                head: "",
+                body: `${indent(plain, 4)}\n\n    <!-- saves the full link of this page (with port) together with the message -->\n    <script>\n      ${pageScript}\n    </script>`
+            }).replace("\n\n  </head>", "\n  </head>");
+        }
+        return `<!-- Email Sender contact form (unstyled: add your own CSS) -->
+${plain}
 
 <!-- saves the full link of this page (with port) together with the message -->
 <script>
-  document.getElementById("es-page-url").value = window.location.href;
+  ${pageScript}
 </script>`;
     }
     if (tab === "js") {
