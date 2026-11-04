@@ -74,6 +74,8 @@ const toggleBlockUser = asyncHandler(async (req, res) => {
     target.isBlocked = wanted;
     if (wanted) target.refreshToken = undefined; // block হলে সাথে সাথে session শেষ
     await target.save({ validateBeforeSave: false });
+    if (wanted)
+        await User.updateOne({ _id: target._id }, { $set: { refreshSessions: [] } });
 
     notifyAdmins(
         {

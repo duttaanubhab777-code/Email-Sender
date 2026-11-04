@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
     {
@@ -74,8 +75,27 @@ const userSchema = new mongoose.Schema(
             default: 500
         },
 
+        // পুরনো (single-session) field — শুধু আগে লগইন করা ইউজারদের জন্য রাখা, নতুন কোড এটা আর লেখে না
         refreshToken: {
             type: String
+        },
+
+        // প্রতিটা device/browser এর আলাদা session — এক জায়গায় login করলে অন্য জায়গা logout হয় না।
+        // token নিজে নয়, তার SHA-256 hash রাখা হয় (DB leak হলেও token চুরি যায় না)
+        refreshSessions: {
+            type: [
+                {
+                    _id: false,
+                    sid: { type: String, required: true },
+                    hash: { type: String, required: true },
+                    prevHash: String, // rotate এর ঠিক আগের token — response হারালে এটা দিয়ে ঢোকা যায়
+                    rotatedAt: Date,
+                    expiresAt: { type: Date, required: true },
+                    createdAt: { type: Date, default: Date.now }
+                }
+            ],
+            default: [],
+            select: false
         }
     },
     { timestamps: true }
@@ -114,10 +134,12 @@ userSchema.methods.genarateAccessToken = function () {
     );
 };
 
-userSchema.methods.genarateRefreshToken = function () {
+userSchema.methods.genarateRefreshToken = function (sid) {
     return jwt.sign(
         {
-            _id: this._id
+            _id: this._id,
+            sid, // কোন device এর session
+            n: crypto.randomBytes(8).toString("hex") // একই সেকেন্ডে বানালেও token আলাদা হবে
         },
         process.env.REFRESH_TOKEN_SECRET,
         {

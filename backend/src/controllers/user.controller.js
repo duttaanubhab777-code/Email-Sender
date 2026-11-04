@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -13,6 +14,7 @@ import {
     removeLocalFile
 } from "../utils/cloudinary.js";
 import { normEmail, isEmail, maskEmail } from "../utils/validators.js";
+import { accessTtlMs, refreshTtlMs } from "../utils/tokenTime.js";
 import {
     normalizeUsername,
     usernameFromEmail,
@@ -32,7 +34,16 @@ import {
     USERNAME_REGEX
 } from "../constants.js";
 
-const cookieOptions = { httpOnly: true, secure: true };
+// BUG FIX: আগে cookie তে maxAge ছিল না, মানে এগুলো "session cookie" — browser/PWA বন্ধ করলেই (বিশেষ করে ফোনে)
+// মুছে যেত, তাই refresh token 10 দিন বাঁচলেও cookie নিজেই হারিয়ে যেত। এখন token এর আয়ুর সমান maxAge দেওয়া আছে।
+const baseCookie = { httpOnly: true, secure: true, sameSite: "lax", path: "/" };
+const cookieOptions = baseCookie; // clearCookie এর জন্য (maxAge ছাড়া)
+const accessCookie = () => ({ ...baseCookie, maxAge: accessTtlMs() });
+const refreshCookie = () => ({ ...baseCookie, maxAge: refreshTtlMs() });
+
+const MAX_SESSIONS = 10; // একজন ইউজারের সর্বোচ্চ কয়টা device এ একসাথে login থাকবে (পুরনোটা বাদ পড়ে)
+const REFRESH_GRACE_MS = 60 * 60 * 1000; // rotate এর পর পুরনো token আরও ১ ঘণ্টা চলবে (response হারালে/cold start এ)
+const sha = t => crypto.createHash("sha256").update(t).digest("hex");
 
 const otpInfo = email => ({
     otpRequired: true,
@@ -60,14 +71,38 @@ const findByIdentifier = identifier => {
     return User.findOne(id.includes("@") ? { email: id } : { username: id });
 };
 
+// নতুন login → নতুন session (অন্য device এর session ছোঁয়া হয় না)
 const genarateAccessAndRefreshTokens = async userId => {
     try {
         const user = await User.findById(userId);
+        const sid = crypto.randomBytes(12).toString("hex");
         const accessToken = user.genarateAccessToken();
-        const refreshToken = user.genarateRefreshToken();
+        const refreshToken = user.genarateRefreshToken(sid);
+        const now = Date.now();
 
-        user.refreshToken = refreshToken;
-        await user.save({ validateBeforeSave: false });
+        // মেয়াদ শেষ হওয়া session মুছে ফেলা (একই update এ $pull আর $push চলে না, তাই দুটো আলাদা)
+        await User.updateOne(
+            { _id: userId },
+            { $pull: { refreshSessions: { expiresAt: { $lt: new Date(now) } } } }
+        );
+        await User.updateOne(
+            { _id: userId },
+            {
+                $push: {
+                    refreshSessions: {
+                        $each: [
+                            {
+                                sid,
+                                hash: sha(refreshToken),
+                                expiresAt: new Date(now + refreshTtlMs())
+                            }
+                        ],
+                        $slice: -MAX_SESSIONS
+                    }
+                },
+                $unset: { refreshToken: "" }
+            }
+        );
 
         return { accessToken, refreshToken };
     } catch (error) {
@@ -99,8 +134,8 @@ const finishLogin = async (req, res, userId, message, status = 200) => {
 
     return res
         .status(status)
-        .cookie("accessToken", accessToken, cookieOptions)
-        .cookie("refreshToken", refreshToken, cookieOptions)
+        .cookie("accessToken", accessToken, accessCookie())
+        .cookie("refreshToken", refreshToken, refreshCookie())
         .json(
             new ApiResponse(
                 status,
@@ -324,6 +359,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.password = newPassword;
     user.refreshToken = undefined; // সব জায়গা থেকে logout
     await user.save({ validateBeforeSave: false });
+    await User.updateOne({ _id: user._id }, { $set: { refreshSessions: [] } });
 
     return res
         .status(200)
@@ -400,10 +436,22 @@ const checkUsername = asyncHandler(async (req, res) => {
 // ================= বাকি আগের মতোই =================
 
 const logoutUser = asyncHandler(async (req, res) => {
-    await User.findByIdAndUpdate(
-        req.user._id,
-        { $set: { refreshToken: undefined } },
-        { new: true }
+    // শুধু এই device এর session মুছবে — অন্য ফোন/ব্রাউজারে login থাকবে
+    let sid = null;
+    try {
+        sid = jwt.verify(
+            req.cookies?.refreshToken || "",
+            process.env.REFRESH_TOKEN_SECRET,
+            { ignoreExpiration: true }
+        )?.sid;
+    } catch {
+        /* cookie নেই/নষ্ট */
+    }
+    await User.updateOne(
+        { _id: req.user._id },
+        sid
+            ? { $pull: { refreshSessions: { sid } } }
+            : { $set: { refreshSessions: [] }, $unset: { refreshToken: "" } }
     );
 
     return res
@@ -421,37 +469,108 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Unauthorised Request");
     }
 
+    let decoded;
     try {
-        const decodedToken = jwt.verify(
+        decoded = jwt.verify(
             incommingRefreshToken,
             process.env.REFRESH_TOKEN_SECRET
         );
-        const user = await User.findById(decodedToken?._id);
-
-        if (!user) throw new ApiError(401, "Invalid Refresh Token");
-        if (incommingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used");
-        }
-        if (user.isBlocked)
-            throw new ApiError(401, "Your account has been blocked");
-
-        const { accessToken, refreshToken } =
-            await genarateAccessAndRefreshTokens(user._id);
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, cookieOptions)
-            .cookie("refreshToken", refreshToken, cookieOptions)
-            .json(
-                new ApiResponse(
-                    200,
-                    { accessToken, refreshToken },
-                    "Access Token Refreshed Successfully"
-                )
-            );
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid Refresh Token");
     }
+
+    const user = await User.findById(decoded?._id).select(
+        "+refreshSessions +refreshToken"
+    );
+    if (!user) throw new ApiError(401, "Invalid Refresh Token");
+    if (user.isBlocked)
+        throw new ApiError(401, "Your account has been blocked");
+
+    const now = Date.now();
+    const h = sha(incommingRefreshToken);
+    let session = decoded.sid
+        ? user.refreshSessions.find(x => x.sid === decoded.sid)
+        : null;
+    let usedPrev = false;
+
+    if (session) {
+        const isCurrent = session.hash === h;
+        usedPrev =
+            !isCurrent &&
+            session.prevHash === h &&
+            session.rotatedAt &&
+            now - session.rotatedAt.getTime() < REFRESH_GRACE_MS;
+        if (!isCurrent && !usedPrev)
+            throw new ApiError(401, "Refresh token is expired or used");
+    } else if (!decoded.sid && user.refreshToken === incommingRefreshToken) {
+        // আগের সংস্করণে (single-session) লগইন করা ইউজার — জোর করে logout না করে নতুন ব্যবস্থায় তুলে নেওয়া
+        session = { sid: crypto.randomBytes(12).toString("hex"), legacy: true };
+    } else {
+        throw new ApiError(401, "Refresh token is expired or used");
+    }
+
+    const accessToken = user.genarateAccessToken();
+    const cookies = [["accessToken", accessToken, accessCookie()]];
+    const out = { accessToken };
+
+    // refresh token প্রতিবার বদলানো হয় না (আগে বদলাত — cold start এ response হারালে পুরনোটা অচল হয়ে logout হয়ে যেত)।
+    // শুধু আয়ুর অর্ধেক পেরোলে নতুন দেওয়া হয় (10 দিন sliding), অথবা পুরনো token grace এ চললে।
+    const msLeft = decoded.exp * 1000 - now;
+    if (session.legacy || usedPrev || msLeft < refreshTtlMs() / 2) {
+        const refreshToken = user.genarateRefreshToken(session.sid);
+        const doc = {
+            sid: session.sid,
+            hash: sha(refreshToken),
+            prevHash: session.legacy ? undefined : h,
+            rotatedAt: new Date(now),
+            expiresAt: new Date(now + refreshTtlMs()),
+            createdAt: session.createdAt || new Date(now)
+        };
+        let rotated = true;
+        if (session.legacy) {
+            await User.updateOne(
+                { _id: user._id },
+                {
+                    $push: {
+                        refreshSessions: { $each: [doc], $slice: -MAX_SESSIONS }
+                    },
+                    $unset: { refreshToken: "" }
+                }
+            );
+        } else {
+            // দুটো tab একসাথে rotate করতে এলে শুধু প্রথমটা জেতে (token এখনো আগের অবস্থায় থাকলেই বদলায়)।
+            // অন্যটা শুধু নতুন access token পায়; তার নিজের token grace সময়ে এখনো চলে।
+            const r = await User.updateOne(
+                {
+                    _id: user._id,
+                    refreshSessions: {
+                        $elemMatch: {
+                            sid: session.sid,
+                            [usedPrev ? "prevHash" : "hash"]: h
+                        }
+                    }
+                },
+                {
+                    $set: {
+                        "refreshSessions.$.hash": doc.hash,
+                        "refreshSessions.$.prevHash": doc.prevHash,
+                        "refreshSessions.$.rotatedAt": doc.rotatedAt,
+                        "refreshSessions.$.expiresAt": doc.expiresAt
+                    }
+                }
+            );
+            rotated = r.modifiedCount > 0;
+        }
+        if (rotated) {
+            cookies.push(["refreshToken", refreshToken, refreshCookie()]);
+            out.refreshToken = refreshToken;
+        }
+    }
+
+    for (const [name, value, opts] of cookies) res.cookie(name, value, opts);
+    return res
+        .status(200)
+        .json(new ApiResponse(200, out, "Access Token Refreshed Successfully"));
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {

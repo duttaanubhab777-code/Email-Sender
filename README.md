@@ -825,8 +825,11 @@ This is a project about email, so I could have put an OTP on every action. I cho
 
 **Sessions.**
 
-- An **access token** (short, default 1 day) and a **refresh token** (long, default 10 days) are stored in `httpOnly` + `secure` cookies. JavaScript on the page can never read them, which blocks the most common token-theft attacks.
-- The refresh token is **also saved on the user's database record**. Logout, password reset, and *blocking* clear it, so a stolen or old token stops working immediately. A blocked user is also refused on every normal request (not only at login).
+- An **access token** (short, default 1 day) and a **refresh token** (long, default 10 days) are stored in `httpOnly` + `secure` + `SameSite=Lax` cookies. JavaScript on the page can never read them, which blocks the most common token-theft attacks.
+- **The cookies carry a real expiry (`maxAge`) that matches the token.** Without it a cookie is a *session cookie* that many phone browsers and installed PWAs throw away when the app is closed, so a 10-day refresh token could vanish in minutes. This was the main cause of "I have to log in again and again".
+- **Every device has its own session.** The database keeps a small list of sessions per user (up to 10), each holding only a **SHA-256 hash** of its refresh token. Logging in on a second phone or browser no longer logs out the first one. Logout removes only *this* device; password reset and *blocking* remove **all** sessions, so a stolen or old token stops working immediately. A blocked user is also refused on every normal request (not only at login).
+- **The refresh token is not replaced on every refresh.** Each refresh only gives a new access token. A new refresh token is issued once more than half of its life has passed (a sliding 10 days), and the previous one still works for **1 hour** afterwards. Why: on Render's free plan the server can go to sleep or the connection can drop while the browser waits; if the server had already swapped the token but the browser never received the new one, the next refresh would fail and the user would be logged out.
+- **A sleeping server is not a logout.** The frontend treats only a real `401/403` as "not logged in". Network errors and `502/503/504` (Render waking up, up to about 15 minutes after the last visit) are retried for roughly a minute while the splash screen says *"The server is waking up"*. Only `GET` requests are retried automatically, so a `POST` is never sent twice.
 - In the frontend, if two requests fail with `401` at once, **only one refresh call is made** and both wait for it (a shared promise). Login, logout, kill-switch and approval calls are *excluded* from auto-refresh, because there a `401` means "wrong password", and retrying would count the wrong attempt twice.
 - Login accepts **email or username** in one box.
 
@@ -1143,7 +1146,7 @@ Protected routes need the login cookie (or an `Authorization: Bearer <token>` he
 | `POST` | `/otp/resend` | New code (30 s wait) for `register` or `forgot_password` |
 | `GET` | `/check-username` | Is a username free? Or suggest one from an email |
 | `POST` | `/logout` | End session |
-| `POST` | `/refresh-token` | Get a new access token |
+| `POST` | `/refresh-token` | Get a new access token (a new refresh token only after half of its life has passed) |
 | `POST` | `/change-password` | Needs the old password |
 | `GET` | `/current-user` | The logged-in user |
 | `PATCH` | `/update-account` | Change name / username |
@@ -1308,7 +1311,7 @@ Twelve MongoDB collections (defined with Mongoose):
 
 | Collection | What it stores | Notable detail |
 |---|---|---|
-| **User** | Name, email, username, password **hash**, avatar, role, `isSuperAdmin`, `isBlocked`, monthly limit (500), refresh token, last-20 login history | Unique email and username; login history is hidden unless explicitly requested |
+| **User** | Name, email, username, password **hash**, avatar, role, `isSuperAdmin`, `isBlocked`, monthly limit (500), per-device refresh sessions (hashed), last-20 login history | Unique email and username; login history is hidden unless explicitly requested |
 | **ApiKey** | Owner, project name, key, `isActive`, usage count | Keys are generated from 16 random bytes |
 | **Submission** | One form message: sender, receiver, subject, message, IP, `sourceUrl`, **status**, attempts, next attempt time, lock time, last error, `clientRef` | The heart of the project. Unique `(apiKey, clientRef)` prevents duplicates |
 | **MailJob** | The outbox for OTP and notification emails | Deleted after delivery; **TTL** removes expired ones |
@@ -1328,7 +1331,7 @@ Twelve MongoDB collections (defined with Mongoose):
 **Accounts & sessions**
 
 - Passwords are hashed with **bcrypt**; minimum 8 characters.
-- Tokens live in `httpOnly` + `secure` cookies. Refresh tokens are verified against the database and cleared on logout, password reset and block.
+- Tokens live in `httpOnly` + `secure` cookies with a real `maxAge`. Each device has its own hashed refresh session; logout removes that one, while password reset and block remove all of them.
 - OTPs are random (`crypto.randomInt`), hashed (HMAC-SHA256), short-lived, limited to 5 attempts, and single-use.
 - "Forgot password" and the registration flow never reveal whether an email is registered through different answers.
 
@@ -1395,6 +1398,8 @@ A good document also says what is *not* perfect. These are known, deliberate or 
 | Register says "code sent" but nothing arrives | The OTP is retrying in the background. Wait a minute, check Spam, and look at `/system/mail-queue` |
 | After a Kill Switch run the site shows a countdown | It is working. Wait for the countdown to finish; the site restarts itself. |
 | Phone notifications do not appear | Allow notifications for the site, make sure VAPID keys are set on the server, then press **Send test** in the notification settings |
+| I have to log in again after a few hours or days | Make sure `ACCESS_TOKEN_EXPIRY=1d`, `REFRESH_TOKEN_EXPIRY=10d` and both secrets stay the same between deploys (a changed secret logs everyone out). After updating to the per-device session version, people who were logged in before are moved over automatically on their next refresh |
+| The first page after a long break is slow or shows "The server is waking up" | Render's free server sleeps after 15 minutes. It is not a logout; wait up to a minute and the page continues by itself |
 | The wrong version of the app appears after a deploy | Close and reopen the app; the service worker updates itself, and pages are always fetched from the network first |
 
 ---

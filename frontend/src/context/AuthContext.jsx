@@ -16,19 +16,31 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [justLoggedOut, setJustLoggedOut] = useState(false);
 
-    // app খুললে cookie দেখে বুঝে নেয় লগইন আছে কিনা
+    // app খুললে cookie দেখে বুঝে নেয় লগইন আছে কিনা।
+    // BUG FIX: আগে যেকোনো error (network, Render cold start 502/503) এ user = null করে login পেজে পাঠানো হত।
+    // এখন শুধু server স্পষ্টভাবে 401/403 বললেই logout; বাকি ক্ষেত্রে অপেক্ষা করে আবার চেষ্টা (Splash দেখায় "server waking up")।
     useEffect(() => {
         let ignore = false;
-        getCurrentUser()
-            .then(u => {
-                if (!ignore) setUser(u);
-            })
-            .catch(() => {
-                if (!ignore) setUser(null);
-            })
-            .finally(() => {
-                if (!ignore) setLoading(false);
-            });
+        (async () => {
+            for (let attempt = 0; attempt < 6; attempt++) {
+                try {
+                    const u = await getCurrentUser();
+                    if (!ignore) setUser(u);
+                    break;
+                } catch (err) {
+                    if (ignore) return;
+                    // 4xx = server স্পষ্ট বলেছে "লগইন নেই" → logout।
+                    // 5xx / network / 503 (server waking up) = session নষ্ট হয়নি → অপেক্ষা করে আবার চেষ্টা।
+                    const definite = err?.status >= 400 && err.status < 500;
+                    if (definite || attempt === 5) {
+                        setUser(null);
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 4000));
+                }
+            }
+            if (!ignore) setLoading(false);
+        })();
         return () => {
             ignore = true;
         };

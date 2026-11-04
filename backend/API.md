@@ -104,3 +104,9 @@ KILL_SWITCH_PASSWORD_HASH, KILL_ALLOW_CODE_DELETE, KILL_DRY_RUN, KILL_COUNTDOWN_
   If `pageUrl` is missing, the `Referer` / `Origin` header is used instead (browsers usually send only
   `http://host:port` cross-site, so add `pageUrl` to get the full path). Only `http(s)` links are accepted.
 - `GET /api/v1/mail/ping` returns `204` — call it when a form opens to wake a sleeping host.
+
+## Login session (token) behaviour
+- accessToken (default 1d) ও refreshToken (default 10d) দুটোই httpOnly + secure + SameSite=Lax cookie; cookie তে token এর সমান `maxAge` দেওয়া আছে (আগে ছিল না, তাই ফোনে browser বন্ধ করলে login চলে যেত)
+- প্রতিটা device/browser এর আলাদা session (সর্বোচ্চ ১০টা, DB তে শুধু SHA-256 hash) — এক জায়গায় login করলে অন্য জায়গা logout হয় না
+- `POST /users/refresh-token` প্রতিবার শুধু নতুন accessToken দেয়; refreshToken বদলায় শুধু আয়ুর অর্ধেক পেরোলে, আর পুরনোটা তখন আরও ১ ঘণ্টা চলে (Render cold start এ response হারালেও logout হয় না)
+- `POST /users/logout` শুধু এই device এর session মোছে; password reset ও block সব session মোছে

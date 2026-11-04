@@ -35,19 +35,64 @@ const NO_REFRESH = [
 ];
 const canRefresh = path => !NO_REFRESH.some(p => path.startsWith(p));
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Render free plan এ server ঘুমালে প্রথম request এ network error / 502 / 503 / 504 আসতে পারে।
+// এগুলো "logout" নয় — server জাগছে, তাই একটু অপেক্ষা করে আবার চেষ্টা করা হয়।
+const WAKING_STATUS = [502, 503, 504];
+const WAKE_RETRIES = 6; // মোট ~১ মিনিট পর্যন্ত চেষ্টা
+const WAKE_DELAY = 4000;
+
+async function fetchWithWake(url, options, { retryable, signal }) {
+    for (let attempt = 0; ; attempt++) {
+        let res = null;
+        let failed = false;
+        try {
+            res = await fetch(url, options);
+        } catch (err) {
+            if (err.name === "AbortError") throw err;
+            failed = true;
+        }
+        const waking = failed || WAKING_STATUS.includes(res.status);
+        if (!waking) return res;
+        // kill switch এর 503 আসল উত্তর — retry নয়
+        if (res && res.status === 503) {
+            const j = await parseJson(res.clone());
+            if (j?.data?.killSwitch) return res;
+        }
+        if (!retryable || attempt >= WAKE_RETRIES || signal?.aborted) {
+            if (failed) throw new TypeError("network");
+            return res;
+        }
+        await sleep(WAKE_DELAY);
+    }
+}
+
 let refreshing = null;
 function refreshSession() {
     if (!refreshing) {
-        refreshing = fetch(`${BASE_URL}/users/refresh-token`, {
-            method: "POST",
-            credentials: "include"
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("refresh failed");
-            })
-            .finally(() => {
-                refreshing = null;
-            });
+        refreshing = (async () => {
+            let res;
+            try {
+                res = await fetchWithWake(
+                    `${BASE_URL}/users/refresh-token`,
+                    { method: "POST", credentials: "include" },
+                    { retryable: true }
+                );
+            } catch {
+                const e = new Error("server unreachable");
+                e.definitive = false; // server এ পৌঁছানো যায়নি — session নষ্ট হয়নি
+                throw e;
+            }
+            if (!res.ok) {
+                const e = new Error("refresh failed");
+                // শুধু 401/403 মানে সত্যিই session শেষ; 5xx মানে server সমস্যা
+                e.definitive = res.status === 401 || res.status === 403;
+                throw e;
+            }
+        })().finally(() => {
+            refreshing = null;
+        });
     }
     return refreshing;
 }
@@ -73,7 +118,11 @@ export async function request(
 
     let res;
     try {
-        res = await fetch(`${BASE_URL}${path}`, options);
+        // শুধু GET আবার পাঠানো নিরাপদ (POST দুইবার গেলে দুটো কাজ হয়ে যেতে পারে)
+        res = await fetchWithWake(`${BASE_URL}${path}`, options, {
+            retryable: method === "GET",
+            signal
+        });
     } catch (err) {
         if (err.name === "AbortError") throw err;
         throw new ApiError(
@@ -92,8 +141,16 @@ export async function request(
                 signal,
                 retry: false
             });
-        } catch {
-            /* refresh ব্যর্থ — নিচে আসল 401 ই দেখানো হবে */
+        } catch (err) {
+            // BUG FIX: server ঘুমিয়ে/অচল থাকলে refresh ব্যর্থ হওয়াকে "logout" ধরা যাবে না।
+            // আগে সব ব্যর্থতায় আসল 401 দেখানো হত, আর AuthContext সঙ্গে সঙ্গে user কে logout করে দিত।
+            if (err && err.definitive === false) {
+                throw new ApiError(
+                    "The server is waking up. Please try again in a moment.",
+                    503
+                );
+            }
+            /* refresh সত্যিই বাতিল (401) — নিচে আসল 401 ই দেখানো হবে */
         }
     }
 
