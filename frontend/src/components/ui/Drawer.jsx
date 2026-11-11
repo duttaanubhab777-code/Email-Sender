@@ -1,8 +1,16 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import Icon from "../Icons";
 
 // subtitle = শিরোনামের নিচে ছোট লেখা, footer = নিচে আটকে থাকা বাটনের সারি (স্ক্রল হলেও দেখা যায়)
-export default function Drawer({ open, onClose, title, subtitle, footer, children }) {
+export default function Drawer({
+    open,
+    onClose,
+    title,
+    subtitle,
+    footer,
+    children
+}) {
     useEffect(() => {
         if (!open) return;
         const onKey = e => e.key === "Escape" && onClose();
@@ -15,7 +23,9 @@ export default function Drawer({ open, onClose, title, subtitle, footer, childre
         };
     }, [open, onClose]);
     if (!open) return null;
-    return (
+    // Portal: drawer কে সরাসরি <body> এ বসানো হয়, নইলে .shell (z-index: 1) এর ভেতরে আটকে
+    // গিয়ে টপবার, নিচের ট্যাব বার আর watermark এর পেছনে চাপা পড়ত।
+    return createPortal(
         <>
             <div className="drawer-backdrop" onClick={onClose} />
             <aside
@@ -40,6 +50,7 @@ export default function Drawer({ open, onClose, title, subtitle, footer, childre
                 <div className="drawer-body">{children}</div>
                 {footer && <div className="drawer-foot">{footer}</div>}
             </aside>
-        </>
+        </>,
+        document.body
     );
 }

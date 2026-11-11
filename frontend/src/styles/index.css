@@ -39,7 +39,12 @@
 
     --grad-blue: linear-gradient(135deg, #0b57c4 0%, #1d8bff 55%, #19c3ff 100%);
     --grad-orange: linear-gradient(135deg, #ff6a00 0%, #ff9a1f 100%);
-    --grad-brand: linear-gradient(110deg, #0b57c4 0%, #1d8bff 38%, #ff7a1a 100%);
+    --grad-brand: linear-gradient(
+        110deg,
+        #0b57c4 0%,
+        #1d8bff 38%,
+        #ff7a1a 100%
+    );
     --grad-soft: linear-gradient(135deg, #e6f0ff 0%, #fff1e4 100%);
 
     --danger: #c4262e;
@@ -102,7 +107,12 @@
 
     --grad-blue: linear-gradient(135deg, #1f6fe8 0%, #2f9bff 55%, #22d0ff 100%);
     --grad-orange: linear-gradient(135deg, #ff6a00 0%, #ffa11f 100%);
-    --grad-brand: linear-gradient(110deg, #2f86ff 0%, #22d0ff 38%, #ff8a2a 100%);
+    --grad-brand: linear-gradient(
+        110deg,
+        #2f86ff 0%,
+        #22d0ff 38%,
+        #ff8a2a 100%
+    );
     --grad-soft: linear-gradient(135deg, #0e2a57 0%, #3a1f08 100%);
 
     --danger: #ff6b6b;
@@ -720,8 +730,8 @@ code,
 .tab-btn.active {
     color: var(--ink);
     border-bottom-color: transparent;
-    background: linear-gradient(90deg, var(--brand), var(--orange)) left bottom /
-        100% 2px no-repeat;
+    background: linear-gradient(90deg, var(--brand), var(--orange)) left
+        bottom / 100% 2px no-repeat;
 }
 .seg {
     display: inline-flex;
@@ -1286,24 +1296,108 @@ code,
     }
 }
 
-
-/* ---------- Admin sent-email table: mobile scrolling ---------- */
+/* ---------- Admin sent-email table ---------- */
+/* Desktop / tablet: table নিজের scroll box এ, heading উপরে আটকে থাকে */
 .admin-email-table-wrap {
     max-height: min(68dvh, 720px);
     overflow: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
     scrollbar-gutter: stable;
 }
 .admin-email-table-wrap .table {
-    min-width: 760px;
+    min-width: 720px;
+}
+.admin-email-table-wrap .table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+.admin-email-table-wrap .table td {
+    min-width: 0;
+}
+
+/* Phone: প্রতিটা email একটা card; পাশে scroll নেই, পুরো পেজ নিজেই scroll হয় */
+@media (max-width: 720px) {
+    .admin-email-table-wrap {
+        max-height: none;
+        overflow: visible;
+        scrollbar-gutter: auto;
+    }
+    .admin-email-table-wrap .table {
+        min-width: 0;
+        width: 100%;
+        table-layout: auto;
+    }
+    .admin-email-table-wrap .table.stack tr {
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .admin-email-table-wrap .table.stack tr:active {
+        background: var(--panel-2);
+    }
+    .admin-email-table-wrap .table.stack td {
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+    /* label বাঁ দিকে, মান ডান দিকে — লম্বা হলে ... দিয়ে কাটবে, স্ক্রিনের বাইরে যাবে না */
+    .admin-email-table-wrap .table.stack td > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+    .admin-email-table-wrap .table.stack td > .truncate,
+    .admin-email-table-wrap .table.stack td > span[style] {
+        max-width: 100% !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .admin-email-table-wrap .table.stack td > .cell-user {
+        max-width: 72%;
+        justify-content: flex-end;
+        text-align: left;
+    }
+    .admin-email-table-wrap .table.stack td > .cell-user > div {
+        flex: 1;
+        min-width: 0;
+    }
+    .admin-email-table-wrap .table.stack td.cell-main .truncate,
+    .admin-email-table-wrap .table.stack td.cell-main small {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .admin-email-table-wrap .table.stack td[data-label="Time"] {
+        flex-wrap: wrap;
+    }
+    .admin-email-table-wrap .table.stack td[data-label="Time"] > small {
+        display: inline !important;
+        margin-left: 6px;
+    }
+}
+
+/* ---------- Drawer: phone ---------- */
+.drawer-body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 @media (max-width: 640px) {
-    .admin-email-table-wrap {
-        max-height: 65dvh;
-        overflow: auto;
-        overscroll-behavior-y: contain;
-        -webkit-overflow-scrolling: touch;
+    .drawer {
+        width: 100%;
+        border-left: 0;
+    }
+    .drawer-head {
+        padding: 14px 16px;
+        padding-top: calc(14px + env(safe-area-inset-top));
+    }
+    .drawer-body {
+        padding: 16px;
+        padding-bottom: 20px;
+    }
+    .drawer-foot {
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
 }
