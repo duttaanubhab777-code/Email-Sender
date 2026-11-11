@@ -429,7 +429,7 @@ function LoginTable({ items }) {
 // সব ইউজারের email: sender, কার API key এ এসেছে, status, সময়
 function EmailTable({ items, onOpen }) {
     return (
-        <div className="table-wrap">
+        <div className="table-wrap admin-email-table-wrap">
             <table className="table stack">
                 <thead>
                     <tr>
