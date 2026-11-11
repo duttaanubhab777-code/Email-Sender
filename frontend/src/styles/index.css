@@ -1285,3 +1285,25 @@ code,
         transition-duration: 0.001ms !important;
     }
 }
+
+
+/* ---------- Admin sent-email table: mobile scrolling ---------- */
+.admin-email-table-wrap {
+    max-height: min(68dvh, 720px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    scrollbar-gutter: stable;
+}
+.admin-email-table-wrap .table {
+    min-width: 760px;
+}
+@media (max-width: 640px) {
+    .admin-email-table-wrap {
+        max-height: 65dvh;
+        overflow: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+}
